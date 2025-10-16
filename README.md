@@ -8,26 +8,60 @@ Artemis é um framework modular para Go que traz uma estrutura inspirada no Lara
 com foco em produtividade e organização de código.
 
 ## ✨ Recursos
-- Estrutura modular de alto desempenho.
-- CLI poderoso (`artemis make:module users`).
-- Suporte a múltiplas tecnologias (REST, gRPC, GraphQL, etc).
-- Facilidade de configuração e extensibilidade.
+- ✅ Estrutura modular de alto desempenho
+- ✅ CLI poderoso para geração de código  
+- ✅ Comando `artemis new` para criar projetos
+- ✅ Comando `artemis make module` para gerar módulos
+- ✅ Comando `artemis serve` para desenvolvimento
+- ✅ Sistema de templates flexível
+- 🚧 Suporte a múltiplas tecnologias (REST, gRPC, GraphQL, etc)
+- 🚧 Facilidade de configuração e extensibilidade
 
 ## 🚀 Instalação
+
+### Via Go Install (Recomendado)
 ```bash
 go install github.com/valdirsb/artemis@latest
 ```
 
-## 🧩 Criando um novo projeto
+### Via Build Manual
 ```bash
-artemis new myapp
+git clone https://github.com/valdirsb/artemis.git
+cd artemis
+go build -o bin/artemis ./cmd/artemis
+# Copiar o binário para seu PATH
 ```
 
-## ⚙️ Gerando módulos
+## 🧩 Como usar
+
+### Criando um novo projeto
 ```bash
+artemis new myapp
 cd myapp
-artemis make:module users
 ```
+
+### Gerando módulos
+```bash
+artemis make module users    # Gera módulo completo
+artemis make migration create_users_table
+```
+
+### Executando o servidor
+```bash
+artemis serve              # Roda na porta 8080
+artemis serve --port 3000  # Roda na porta 3000
+```
+
+## 🎯 Comandos Disponíveis
+
+| Comando | Descrição | Exemplo |
+|---------|-----------|---------|
+| `artemis new <name>` | Cria novo projeto | `artemis new myapp` |
+| `artemis make module <name>` | Gera módulo | `artemis make module users` |
+| `artemis make migration <name>` | Gera migration | `artemis make migration create_users` |
+| `artemis serve` | Inicia servidor | `artemis serve --port 3000` |
+
+## 📁 Estrutura Gerada
 
 ## 📦 Estrutura
 ```
