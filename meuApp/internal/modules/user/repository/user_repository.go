@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"meuApp/internal/modules/user/domain"
 	"meuApp/internal/modules/user/ports"
-	"meuApp/pkg/contracts"
 
 	"gorm.io/gorm"
 )
@@ -23,9 +23,9 @@ func NewMySQLUserRepository(db *gorm.DB) ports.UserRepository {
 }
 
 // Create cria um novo usuário no banco de dados
-func (r *mysqlUserRepository) Create(ctx context.Context, user *contracts.User) error {
+func (r *mysqlUserRepository) Create(ctx context.Context, user *domain.User) error {
 	userModel := &UserModel{}
-	userModel.FromContract(user)
+	userModel.FromDomain(user)
 
 	if err := r.db.WithContext(ctx).Create(userModel).Error; err != nil {
 		return fmt.Errorf("failed to create user: %w", err)
@@ -35,7 +35,7 @@ func (r *mysqlUserRepository) Create(ctx context.Context, user *contracts.User) 
 }
 
 // GetByID busca um usuário pelo ID
-func (r *mysqlUserRepository) GetByID(ctx context.Context, id string) (*contracts.User, error) {
+func (r *mysqlUserRepository) GetByID(ctx context.Context, id string) (*domain.User, error) {
 	var userModel UserModel
 
 	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&userModel).Error; err != nil {
@@ -45,11 +45,11 @@ func (r *mysqlUserRepository) GetByID(ctx context.Context, id string) (*contract
 		return nil, fmt.Errorf("failed to get user by ID: %w", err)
 	}
 
-	return userModel.ToContract(), nil
+	return userModel.ToDomain(), nil
 }
 
 // GetByEmail busca um usuário pelo email
-func (r *mysqlUserRepository) GetByEmail(ctx context.Context, email string) (*contracts.User, error) {
+func (r *mysqlUserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	var userModel UserModel
 
 	if err := r.db.WithContext(ctx).Where("email = ?", email).First(&userModel).Error; err != nil {
@@ -59,13 +59,13 @@ func (r *mysqlUserRepository) GetByEmail(ctx context.Context, email string) (*co
 		return nil, fmt.Errorf("failed to get user by email: %w", err)
 	}
 
-	return userModel.ToContract(), nil
+	return userModel.ToDomain(), nil
 }
 
 // Update atualiza um usuário existente
-func (r *mysqlUserRepository) Update(ctx context.Context, user *contracts.User) error {
+func (r *mysqlUserRepository) Update(ctx context.Context, user *domain.User) error {
 	userModel := &UserModel{}
-	userModel.FromContract(user)
+	userModel.FromDomain(user)
 
 	result := r.db.WithContext(ctx).Where("id = ?", user.ID).Updates(userModel)
 	if result.Error != nil {

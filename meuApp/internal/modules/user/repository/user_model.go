@@ -3,7 +3,7 @@ package repository
 import (
 	"time"
 
-	"meuApp/pkg/contracts"
+	"meuApp/internal/modules/user/domain"
 )
 
 // UserModel representa a estrutura da tabela users no banco
@@ -21,9 +21,9 @@ func (UserModel) TableName() string {
 	return "users"
 }
 
-// ToContract converte UserModel para contracts.User
-func (u *UserModel) ToContract() *contracts.User {
-	return &contracts.User{
+// ToDomain converte UserModel para domain.User
+func (u *UserModel) ToDomain() *domain.User {
+	return &domain.User{
 		ID:        u.ID,
 		Username:  u.Username,
 		Email:     u.Email,
@@ -33,8 +33,8 @@ func (u *UserModel) ToContract() *contracts.User {
 	}
 }
 
-// FromContract converte contracts.User para UserModel
-func (u *UserModel) FromContract(user *contracts.User) {
+// FromDomain converte domain.User para UserModel
+func (u *UserModel) FromDomain(user *domain.User) {
 	u.ID = user.ID
 	u.Username = user.Username
 	u.Email = user.Email

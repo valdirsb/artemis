@@ -5,13 +5,16 @@ import (
 	"regexp"
 	"time"
 	"unicode/utf8"
-
-	"meuApp/pkg/contracts"
 )
 
 // User representa a entidade de domínio do usuário
 type User struct {
-	contracts.User
+	ID        string
+	Username  string
+	Email     string
+	Password  string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 // UserAggregate contém as regras de negócio do usuário
@@ -30,13 +33,11 @@ func NewUser(id, username, email string) (*User, error) {
 	}
 
 	return &User{
-		User: contracts.User{
-			ID:        id,
-			Username:  username,
-			Email:     email,
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-		},
+		ID:        id,
+		Username:  username,
+		Email:     email,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}, nil
 }
 
