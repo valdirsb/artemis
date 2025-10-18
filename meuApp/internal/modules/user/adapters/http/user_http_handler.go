@@ -1,4 +1,4 @@
-package handler
+package http
 
 import (
 	"net/http"
@@ -9,15 +9,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type UserHandler struct {
+// UserHTTPHandler é o adapter HTTP para o módulo de usuário
+// Converte requests HTTP para comandos/queries da camada de aplicação
+type UserHTTPHandler struct {
 	userService ports.UserService
 }
 
-func NewUserHandler(userService ports.UserService) *UserHandler {
-	return &UserHandler{userService: userService}
+// NewUserHTTPHandler cria uma nova instância do handler HTTP
+func NewUserHTTPHandler(userService ports.UserService) *UserHTTPHandler {
+	return &UserHTTPHandler{userService: userService}
 }
 
-func (h *UserHandler) CreateUser(c *gin.Context) {
+// CreateUser é o endpoint HTTP para criação de usuário
+func (h *UserHTTPHandler) CreateUser(c *gin.Context) {
 
 	var req dto.CreateUserRequest
 
@@ -37,7 +41,8 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	c.JSON(http.StatusCreated, response)
 }
 
-func (h *UserHandler) GetUser(c *gin.Context) {
+// GetUser é o endpoint HTTP para buscar usuário por ID
+func (h *UserHTTPHandler) GetUser(c *gin.Context) {
 	id := c.Param("id")
 	user, err := h.userService.GetUserByID(c.Request.Context(), id)
 	if err != nil {
@@ -50,7 +55,8 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-func (h *UserHandler) UpdateUser(c *gin.Context) {
+// UpdateUser é o endpoint HTTP para atualizar usuário
+func (h *UserHTTPHandler) UpdateUser(c *gin.Context) {
 	id := c.Param("id")
 	var req dto.UpdateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -69,7 +75,8 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-func (h *UserHandler) DeleteUser(c *gin.Context) {
+// DeleteUser é o endpoint HTTP para deletar usuário
+func (h *UserHTTPHandler) DeleteUser(c *gin.Context) {
 	id := c.Param("id")
 	if err := h.userService.DeleteUser(c.Request.Context(), id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -79,7 +86,8 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-func (h *UserHandler) ValidateUser(c *gin.Context) {
+// ValidateUser é o endpoint HTTP para validar credenciais
+func (h *UserHTTPHandler) ValidateUser(c *gin.Context) {
 
 	var req dto.LoginRequest
 

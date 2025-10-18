@@ -7,7 +7,8 @@ import (
 	orderPorts "meuApp/internal/modules/order/ports"
 	productHandler "meuApp/internal/modules/product/handler"
 	productPorts "meuApp/internal/modules/product/ports"
-	userHandler "meuApp/internal/modules/user/handler"
+	userGRPC "meuApp/internal/modules/user/adapters/grpc"
+	userHTTP "meuApp/internal/modules/user/adapters/http"
 	userPorts "meuApp/internal/modules/user/ports"
 	"meuApp/pkg/container"
 	"meuApp/pkg/framework"
@@ -21,7 +22,7 @@ func registerModuleHandlers(c *container.Container, fw *framework.Framework) {
 	if framework.IsEnabled("modules", "user") {
 		c.RegisterSingleton("userHandler", func() interface{} {
 			userService := c.MustGet("userService").(userPorts.UserService)
-			return userHandler.NewUserHandler(userService)
+			return userHTTP.NewUserHTTPHandler(userService)
 		})
 	}
 
@@ -59,7 +60,7 @@ func registerGRPCServices(c *container.Container, fw *framework.Framework) {
 	if framework.IsEnabled("modules", "user") {
 		userSvc := c.MustGet("userService").(userPorts.UserService)
 		userRepo := c.MustGet("userRepository").(userPorts.UserRepository)
-		userGRPCService := userHandler.NewUserGRPCHandler(userSvc, userRepo)
+		userGRPCService := userGRPC.NewUserGRPCHandler(userSvc, userRepo)
 		grpcProvider.RegisterService(userGRPCService)
 		log.Printf("✅ User gRPC service registered")
 	}

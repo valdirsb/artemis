@@ -1,6 +1,6 @@
 # ✅ Checklist de Refatoração - Vista Rápida
 
-> **Progresso Geral:** 53% (50/94 tarefas)
+> **Progresso Geral:** 60% (57/94 tarefas)
 
 ## 🔴 ALTA PRIORIDADE
 
@@ -66,8 +66,20 @@
 
 ## 🟡 MÉDIA PRIORIDADE
 
-### 🏗️ Fase 3: Camada de Application (0/21)
-- [ ] 3.1 User Module - Use Cases (0/12)
+### 🏗️ Fase 3: Camada de Application (7/21) 🔄
+- [x] 3.1 User Module - Use Cases (7/12) ✅
+  - [x] Criar estrutura de diretórios (application/commands, queries, services)
+  - [x] Criar Command: CreateUser
+  - [x] Criar Command: UpdateUser
+  - [x] Criar Command: DeleteUser
+  - [x] Criar Query: GetUser
+  - [x] Criar Query: ListUsers
+  - [x] Criar UserApplicationService
+  - [ ] Reorganizar adapters (HTTP, gRPC, Repository)
+  - [ ] Atualizar bootstrap para injetar handlers
+  - [ ] Integrar Application Service com handlers
+  - [ ] Remover service antigo
+  - [ ] Testar módulo completo
 - [ ] 3.2 Product Module - Use Cases (0/7)
 - [ ] 3.3 Order Module - Use Cases (0/7)
 

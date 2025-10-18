@@ -62,6 +62,26 @@ func (r *mysqlUserRepository) GetByEmail(ctx context.Context, email string) (*do
 	return userModel.ToDomain(), nil
 }
 
+// List retorna uma lista de usuários com paginação
+func (r *mysqlUserRepository) List(ctx context.Context, offset, limit int) ([]*domain.User, error) {
+	var userModels []UserModel
+
+	if err := r.db.WithContext(ctx).
+		Offset(offset).
+		Limit(limit).
+		Order("created_at DESC").
+		Find(&userModels).Error; err != nil {
+		return nil, fmt.Errorf("failed to list users: %w", err)
+	}
+
+	users := make([]*domain.User, len(userModels))
+	for i, model := range userModels {
+		users[i] = model.ToDomain()
+	}
+
+	return users, nil
+}
+
 // Update atualiza um usuário existente
 func (r *mysqlUserRepository) Update(ctx context.Context, user *domain.User) error {
 	userModel := &UserModel{}

@@ -7,7 +7,7 @@ import (
 
 	orderRepo "meuApp/internal/modules/order/repository"
 	productRepo "meuApp/internal/modules/product/repository"
-	userRepo "meuApp/internal/modules/user/repository"
+	userRepo "meuApp/internal/modules/user/adapters/repository"
 
 	"gorm.io/gorm"
 )

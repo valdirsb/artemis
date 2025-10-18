@@ -3,7 +3,7 @@ package bootstrap
 import (
 	orderRepository "meuApp/internal/modules/order/repository"
 	productRepository "meuApp/internal/modules/product/repository"
-	userRepository "meuApp/internal/modules/user/repository"
+	userRepository "meuApp/internal/modules/user/adapters/repository"
 
 	"gorm.io/gorm"
 )
