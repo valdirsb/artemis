@@ -11,7 +11,7 @@ import (
 
 	"meuApp/internal/bootstrap"
 	"meuApp/internal/routes"
-	"meuApp/internal/shared/config"
+	"meuApp/pkg/config"
 
 	"github.com/gin-gonic/gin"
 )

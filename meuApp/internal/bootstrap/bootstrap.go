@@ -6,9 +6,8 @@ import (
 	"log"
 
 	"meuApp/internal/modules/user/adapters"
-
-	"meuApp/internal/shared/config"
-	"meuApp/internal/shared/database"
+	"meuApp/pkg/adapters/database/mysql"
+	"meuApp/pkg/config"
 	"meuApp/pkg/container"
 	"meuApp/pkg/events"
 	"meuApp/pkg/framework"
@@ -94,14 +93,25 @@ func registerCoreInfrastructure(c *container.Container, fw *framework.Framework)
 	// Database Connection (if enabled)
 	if framework.IsEnabled("database", "mysql") {
 		c.RegisterSingleton("database", func() interface{} {
-			config := database.GetDefaultConfig()
-			db, err := database.Connect(config)
+			cfg, err := config.LoadConfig()
+			if err != nil {
+				log.Fatalf("Failed to load config: %v", err)
+			}
+
+			dbConfig := &mysql.DatabaseConfig{
+				Host:     cfg.DBHost,
+				Port:     cfg.DBPort,
+				Username: cfg.DBUsername,
+				Password: cfg.DBPassword,
+				Database: cfg.DBDatabase,
+			}
+			db, err := mysql.Connect(dbConfig)
 			if err != nil {
 				log.Fatalf("Failed to connect to database: %v", err)
 			}
 
 			// Executar migrações
-			if err := database.AutoMigrate(db); err != nil {
+			if err := mysql.AutoMigrate(db); err != nil {
 				log.Fatalf("Failed to run database migrations: %v", err)
 			}
 
