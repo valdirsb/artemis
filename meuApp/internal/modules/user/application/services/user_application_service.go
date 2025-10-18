@@ -6,33 +6,35 @@ import (
 "meuApp/internal/modules/user/application/commands"
 "meuApp/internal/modules/user/application/queries"
 "meuApp/internal/modules/user/domain"
-"meuApp/internal/modules/user/ports"
 )
 
 type UserApplicationService struct {
-createUserHandler *commands.CreateUserHandler
-updateUserHandler *commands.UpdateUserHandler
-deleteUserHandler *commands.DeleteUserHandler
-getUserHandler    *queries.GetUserHandler
-listUsersHandler  *queries.ListUsersHandler
-userService       ports.UserService
+createUserHandler        *commands.CreateUserHandler
+updateUserHandler        *commands.UpdateUserHandler
+deleteUserHandler        *commands.DeleteUserHandler
+validateCredentialsHandler *commands.ValidateCredentialsHandler
+getUserHandler           *queries.GetUserHandler
+listUsersHandler         *queries.ListUsersHandler
+getUserByEmailHandler    *queries.GetUserByEmailHandler
 }
 
 func NewUserApplicationService(
 createUserHandler *commands.CreateUserHandler,
 updateUserHandler *commands.UpdateUserHandler,
 deleteUserHandler *commands.DeleteUserHandler,
+validateCredentialsHandler *commands.ValidateCredentialsHandler,
 getUserHandler *queries.GetUserHandler,
 listUsersHandler *queries.ListUsersHandler,
-userService ports.UserService,
+getUserByEmailHandler *queries.GetUserByEmailHandler,
 ) *UserApplicationService {
 return &UserApplicationService{
-createUserHandler: createUserHandler,
-updateUserHandler: updateUserHandler,
-deleteUserHandler: deleteUserHandler,
-getUserHandler:    getUserHandler,
-listUsersHandler:  listUsersHandler,
-userService:       userService,
+createUserHandler:        createUserHandler,
+updateUserHandler:        updateUserHandler,
+deleteUserHandler:        deleteUserHandler,
+validateCredentialsHandler: validateCredentialsHandler,
+getUserHandler:           getUserHandler,
+listUsersHandler:         listUsersHandler,
+getUserByEmailHandler:    getUserByEmailHandler,
 }
 }
 
@@ -62,9 +64,11 @@ return s.listUsersHandler.Handle(ctx, query)
 }
 
 func (s *UserApplicationService) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
-return s.userService.GetUserByEmail(ctx, email)
+query := queries.GetUserByEmailQuery{Email: email}
+return s.getUserByEmailHandler.Handle(ctx, query)
 }
 
 func (s *UserApplicationService) ValidateCredentials(ctx context.Context, email, password string) (*domain.User, error) {
-return s.userService.ValidateCredentials(ctx, email, password)
+cmd := commands.ValidateCredentialsCommand{Email: email, Password: password}
+return s.validateCredentialsHandler.Handle(ctx, cmd)
 }

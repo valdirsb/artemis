@@ -11,6 +11,11 @@ import (
 	productServices "meuApp/internal/modules/product/application/services"
 	productPorts "meuApp/internal/modules/product/ports"
 
+	orderCommands "meuApp/internal/modules/order/application/commands"
+	orderQueries "meuApp/internal/modules/order/application/queries"
+	orderServices "meuApp/internal/modules/order/application/services"
+	orderPorts "meuApp/internal/modules/order/ports"
+
 	"meuApp/pkg/contracts"
 )
 
@@ -26,7 +31,6 @@ func (s *Bootstrap) StartApplicationServices() {
 	userRepo := s.container.MustGet("userRepository").(userPorts.UserRepository)
 	passwordHasher := s.container.MustGet("passwordHasher").(userPorts.PasswordHasher)
 	emailService := s.container.MustGet("emailService").(userPorts.EmailService)
-	userService := s.container.MustGet("userService").(userPorts.UserService)
 
 	// Command Handlers
 	createUserHandler := userCommands.NewCreateUserHandler(
@@ -48,6 +52,12 @@ func (s *Bootstrap) StartApplicationServices() {
 		logger,
 	)
 
+	validateCredentialsHandler := userCommands.NewValidateCredentialsHandler(
+		userRepo,
+		passwordHasher,
+		logger,
+	)
+
 	// Query Handlers
 	getUserHandler := userQueries.NewGetUserHandler(
 		userRepo,
@@ -59,14 +69,20 @@ func (s *Bootstrap) StartApplicationServices() {
 		logger,
 	)
 
+	getUserByEmailHandler := userQueries.NewGetUserByEmailHandler(
+		userRepo,
+		logger,
+	)
+
 	// Application Service
 	userApplicationService := userServices.NewUserApplicationService(
 		createUserHandler,
 		updateUserHandler,
 		deleteUserHandler,
+		validateCredentialsHandler,
 		getUserHandler,
 		listUsersHandler,
-		userService, // Para operações que ainda não foram migradas
+		getUserByEmailHandler,
 	)
 
 	// Registrar no container
@@ -123,5 +139,54 @@ func (s *Bootstrap) StartApplicationServices() {
 
 	// Registrar no container
 	s.Services["productApplicationService"] = productApplicationService
+
+	// ===== ORDER MODULE =====
+
+	// Dependencies do Order Module
+	orderRepo := s.container.MustGet("orderRepository").(orderPorts.OrderRepository)
+
+	// Command Handlers
+	createOrderHandler := orderCommands.NewCreateOrderHandler(
+		orderRepo,
+		userRepo,
+		productRepo,
+		eventPublisher,
+		logger,
+	)
+
+	updateOrderStatusHandler := orderCommands.NewUpdateOrderStatusHandler(
+		orderRepo,
+		eventPublisher,
+		logger,
+	)
+
+	cancelOrderHandler := orderCommands.NewCancelOrderHandler(
+		orderRepo,
+		eventPublisher,
+		logger,
+	)
+
+	// Query Handlers
+	getOrderHandler := orderQueries.NewGetOrderHandler(
+		orderRepo,
+		logger,
+	)
+
+	getOrdersByUserHandler := orderQueries.NewGetOrdersByUserHandler(
+		orderRepo,
+		logger,
+	)
+
+	// Application Service
+	orderApplicationService := orderServices.NewOrderApplicationService(
+		createOrderHandler,
+		updateOrderStatusHandler,
+		cancelOrderHandler,
+		getOrderHandler,
+		getOrdersByUserHandler,
+	)
+
+	// Registrar no container
+	s.Services["orderApplicationService"] = orderApplicationService
 
 }

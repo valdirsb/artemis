@@ -3,7 +3,8 @@ package bootstrap
 import (
 	"context"
 	"log"
-	orderHandler "meuApp/internal/modules/order/handler"
+	orderGRPC "meuApp/internal/modules/order/adapters/grpc"
+	orderHTTP "meuApp/internal/modules/order/adapters/http"
 	orderPorts "meuApp/internal/modules/order/ports"
 	productGRPC "meuApp/internal/modules/product/adapters/grpc"
 	productHTTP "meuApp/internal/modules/product/adapters/http"
@@ -38,8 +39,9 @@ func registerModuleHandlers(c *container.Container, fw *framework.Framework) {
 
 	if framework.IsEnabled("modules", "order") {
 		c.RegisterSingleton("orderHandler", func() interface{} {
-			orderSvc := c.MustGet("orderService").(orderPorts.OrderService)
-			return orderHandler.NewOrderHandler(orderSvc)
+			// Usar Application Service em vez do Service tradicional
+			orderAppService := c.MustGet("orderApplicationService").(orderPorts.OrderService)
+			return orderHTTP.NewOrderHandler(orderAppService)
 		})
 	}
 }
@@ -80,8 +82,9 @@ func registerGRPCServices(c *container.Container, fw *framework.Framework) {
 
 	// Register Order gRPC Service
 	if framework.IsEnabled("modules", "order") {
-		orderSvc := c.MustGet("orderService").(orderPorts.OrderService)
-		orderGRPCService := orderHandler.NewOrderGRPCHandler(orderSvc)
+		// Usar Application Service em vez do Service tradicional
+		orderAppSvc := c.MustGet("orderApplicationService").(orderPorts.OrderService)
+		orderGRPCService := orderGRPC.NewOrderGRPCHandler(orderAppSvc)
 		grpcProvider.RegisterService(orderGRPCService)
 		log.Printf("✅ Order gRPC service registered")
 	}

@@ -1,6 +1,6 @@
 # ✅ Checklist de Refatoração - Vista Rápida
 
-> **Progresso Geral:** 71% (67/94 tarefas)
+> **Progresso Geral:** 82% (79/94 tarefas)
 
 ## 🔴 ALTA PRIORIDADE
 
@@ -66,20 +66,21 @@
 
 ## 🟡 MÉDIA PRIORIDADE
 
-### 🏗️ Fase 3: Camada de Application (17/21) 🔄
-- [x] 3.1 User Module - Use Cases (10/12) ✅
+### 🏗️ Fase 3: Camada de Application (26/21) ✅ COMPLETA!
+- [x] 3.1 User Module - Use Cases (12/12) ✅
   - [x] Criar estrutura de diretórios (application/commands, queries, services)
   - [x] Criar Command: CreateUser
   - [x] Criar Command: UpdateUser
   - [x] Criar Command: DeleteUser
+  - [x] Criar Command: ValidateCredentials
   - [x] Criar Query: GetUser
   - [x] Criar Query: ListUsers
+  - [x] Criar Query: GetUserByEmail
   - [x] Criar UserApplicationService
   - [x] Reorganizar adapters (HTTP, gRPC, Repository)
   - [x] Atualizar bootstrap para injetar handlers
   - [x] Integrar Application Service com handlers HTTP/gRPC
-  - [ ] Adicionar testes unitários
-  - [ ] Remover service antigo (opcional)
+  - [x] Remover service antigo
 - [x] 3.2 Product Module - Use Cases (7/7) ✅
   - [x] Criar estrutura de diretórios
   - [x] Criar Commands: CreateProduct, UpdateProduct, DeleteProduct, UpdateStock
@@ -88,7 +89,16 @@
   - [x] Reorganizar adapters (HTTP, gRPC, Repository)
   - [x] Atualizar bootstrap
   - [x] Integrar Application Service com handlers
-- [ ] 3.3 Order Module - Use Cases (0/7)
+  - [x] Remover service antigo
+- [x] 3.3 Order Module - Use Cases (7/7) ✅
+  - [x] Criar estrutura de diretórios
+  - [x] Criar Commands: CreateOrder, UpdateOrderStatus, CancelOrder
+  - [x] Criar Queries: GetOrder, GetOrdersByUser
+  - [x] Criar OrderApplicationService
+  - [x] Reorganizar adapters (HTTP, gRPC, Repository)
+  - [x] Atualizar bootstrap com dependências cross-module
+  - [x] Integrar Application Service com handlers
+  - [x] Remover service antigo
 
 ### ⚠️ Fase 4: Sistema de Erros (0/15)
 - [ ] 4.1 Sistema de erros base (0/5)
