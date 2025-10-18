@@ -23,7 +23,7 @@ func NewMySQLProductRepository(db *gorm.DB) contracts.ProductRepository {
 func (r *MySQLProductRepository) Create(ctx context.Context, product *contracts.Product) error {
 	productModel := &ProductModel{}
 	productModel.FromContract(product)
-	
+
 	if err := r.db.WithContext(ctx).Create(productModel).Error; err != nil {
 		return fmt.Errorf("failed to create product: %w", err)
 	}
@@ -46,7 +46,7 @@ func (r *MySQLProductRepository) GetByID(ctx context.Context, id string) (*contr
 func (r *MySQLProductRepository) Update(ctx context.Context, product *contracts.Product) error {
 	productModel := &ProductModel{}
 	productModel.FromContract(product)
-	
+
 	if err := r.db.WithContext(ctx).Save(productModel).Error; err != nil {
 		return fmt.Errorf("failed to update product: %w", err)
 	}

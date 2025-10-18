@@ -6,9 +6,9 @@ import (
 	"os"
 	"time"
 
-	userRepo "meuApp/internal/modules/user/repository"
-	productRepo "meuApp/internal/modules/product/repository"
 	orderRepo "meuApp/internal/modules/order/repository"
+	productRepo "meuApp/internal/modules/product/repository"
+	userRepo "meuApp/internal/modules/user/repository"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
