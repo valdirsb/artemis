@@ -38,7 +38,8 @@ Exemplo:
 		fmt.Println("Próximos passos:")
 		fmt.Printf("  cd %s\n", args[0])
 		fmt.Println("  go mod tidy")
-		fmt.Println("  artemis make:module users")
+		fmt.Println("  make proto-gen")
+		fmt.Println("  make run")
 
 		return nil
 	},
