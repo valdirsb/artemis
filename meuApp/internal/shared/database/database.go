@@ -6,7 +6,9 @@ import (
 	"os"
 	"time"
 
-	"meuApp/pkg/contracts"
+	userRepo "meuApp/internal/modules/user/repository"
+	productRepo "meuApp/internal/modules/product/repository"
+	orderRepo "meuApp/internal/modules/order/repository"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -77,166 +79,13 @@ func Connect(config *DatabaseConfig) (*gorm.DB, error) {
 	return db, nil
 }
 
-// UserModel representa a estrutura da tabela users no banco
-type UserModel struct {
-	ID        string    `gorm:"primaryKey;size:36"`
-	Username  string    `gorm:"uniqueIndex;size:50;not null"`
-	Email     string    `gorm:"uniqueIndex;size:100;not null"`
-	Password  string    `gorm:"size:255;not null"`
-	CreatedAt time.Time `gorm:"autoCreateTime"`
-	UpdatedAt time.Time `gorm:"autoUpdateTime"`
-}
-
-// TableName especifica o nome da tabela
-func (UserModel) TableName() string {
-	return "users"
-}
-
-// ToContract converte UserModel para contracts.User
-func (u *UserModel) ToContract() *contracts.User {
-	return &contracts.User{
-		ID:        u.ID,
-		Username:  u.Username,
-		Email:     u.Email,
-		Password:  u.Password,
-		CreatedAt: u.CreatedAt,
-		UpdatedAt: u.UpdatedAt,
-	}
-}
-
-// FromContract converte contracts.User para UserModel
-func (u *UserModel) FromContract(user *contracts.User) {
-	u.ID = user.ID
-	u.Username = user.Username
-	u.Email = user.Email
-	u.Password = user.Password
-	u.CreatedAt = user.CreatedAt
-	u.UpdatedAt = user.UpdatedAt
-}
-
-// ProductModel representa a estrutura da tabela products no banco
-type ProductModel struct {
-	ID          string    `gorm:"primaryKey;size:36"`
-	Name        string    `gorm:"size:100;not null"`
-	Description string    `gorm:"size:500"`
-	Price       float64   `gorm:"type:decimal(10,2);not null"`
-	Stock       int       `gorm:"default:0;not null"`
-	CategoryID  string    `gorm:"size:36;not null"`
-	CreatedAt   time.Time `gorm:"autoCreateTime"`
-	UpdatedAt   time.Time `gorm:"autoUpdateTime"`
-}
-
-// TableName especifica o nome da tabela
-func (ProductModel) TableName() string {
-	return "products"
-}
-
-// ToContract converte ProductModel para contracts.Product
-func (p *ProductModel) ToContract() *contracts.Product {
-	return &contracts.Product{
-		ID:          p.ID,
-		Name:        p.Name,
-		Description: p.Description,
-		Price:       p.Price,
-		Stock:       p.Stock,
-		CategoryID:  p.CategoryID,
-		CreatedAt:   p.CreatedAt,
-		UpdatedAt:   p.UpdatedAt,
-	}
-}
-
-// FromContract converte contracts.Product para ProductModel
-func (p *ProductModel) FromContract(product *contracts.Product) {
-	p.ID = product.ID
-	p.Name = product.Name
-	p.Description = product.Description
-	p.Price = product.Price
-	p.Stock = product.Stock
-	p.CategoryID = product.CategoryID
-	p.CreatedAt = product.CreatedAt
-	p.UpdatedAt = product.UpdatedAt
-}
-
-// OrderModel representa a estrutura da tabela orders no banco
-type OrderModel struct {
-	ID        string           `gorm:"primaryKey;size:36"`
-	UserID    string           `gorm:"size:36;not null;index"`
-	Status    string           `gorm:"size:20;not null"`
-	Total     float64          `gorm:"type:decimal(10,2);not null"`
-	Items     []OrderItemModel `gorm:"foreignKey:OrderID"`
-	CreatedAt time.Time        `gorm:"autoCreateTime"`
-	UpdatedAt time.Time        `gorm:"autoUpdateTime"`
-}
-
-// TableName especifica o nome da tabela
-func (OrderModel) TableName() string {
-	return "orders"
-}
-
-// OrderItemModel representa a estrutura da tabela order_items no banco
-type OrderItemModel struct {
-	ID        uint    `gorm:"primaryKey;autoIncrement"`
-	OrderID   string  `gorm:"size:36;not null;index"`
-	ProductID string  `gorm:"size:36;not null"`
-	Quantity  int     `gorm:"not null"`
-	Price     float64 `gorm:"type:decimal(10,2);not null"`
-}
-
-// TableName especifica o nome da tabela
-func (OrderItemModel) TableName() string {
-	return "order_items"
-}
-
-// ToContract converte OrderModel para contracts.Order
-func (o *OrderModel) ToContract() *contracts.Order {
-	items := make([]contracts.OrderItem, len(o.Items))
-	for i, item := range o.Items {
-		items[i] = contracts.OrderItem{
-			ProductID: item.ProductID,
-			Quantity:  item.Quantity,
-			Price:     item.Price,
-		}
-	}
-
-	return &contracts.Order{
-		ID:        o.ID,
-		UserID:    o.UserID,
-		Items:     items,
-		Status:    contracts.OrderStatus(o.Status),
-		Total:     o.Total,
-		CreatedAt: o.CreatedAt,
-		UpdatedAt: o.UpdatedAt,
-	}
-}
-
-// FromContract converte contracts.Order para OrderModel
-func (o *OrderModel) FromContract(order *contracts.Order) {
-	o.ID = order.ID
-	o.UserID = order.UserID
-	o.Status = string(order.Status)
-	o.Total = order.Total
-	o.CreatedAt = order.CreatedAt
-	o.UpdatedAt = order.UpdatedAt
-
-	// Converter items
-	o.Items = make([]OrderItemModel, len(order.Items))
-	for i, item := range order.Items {
-		o.Items[i] = OrderItemModel{
-			OrderID:   order.ID,
-			ProductID: item.ProductID,
-			Quantity:  item.Quantity,
-			Price:     item.Price,
-		}
-	}
-}
-
 // AutoMigrate executa as migrações necessárias
 func AutoMigrate(db *gorm.DB) error {
 	err := db.AutoMigrate(
-		&UserModel{},
-		&ProductModel{},
-		&OrderModel{},
-		&OrderItemModel{},
+		&userRepo.UserModel{},
+		&productRepo.ProductModel{},
+		&orderRepo.OrderModel{},
+		&orderRepo.OrderItemModel{},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to run auto migration: %w", err)
@@ -259,7 +108,7 @@ func SeedDatabase(db *gorm.DB) error {
 
 	// Verificar se já existem produtos para evitar duplicação
 	var count int64
-	if err := db.Model(&ProductModel{}).Count(&count).Error; err != nil {
+	if err := db.Model(&productRepo.ProductModel{}).Count(&count).Error; err != nil {
 		return fmt.Errorf("failed to count products: %w", err)
 	}
 
@@ -269,7 +118,7 @@ func SeedDatabase(db *gorm.DB) error {
 	}
 
 	// Seeds de produtos
-	products := []ProductModel{
+	products := []productRepo.ProductModel{
 		{
 			ID:          "prod-001",
 			Name:        "iPhone 15 Pro Max",

@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"meuApp/internal/modules/user/ports"
-	"meuApp/internal/shared/database"
 	"meuApp/pkg/contracts"
 
 	"gorm.io/gorm"
@@ -25,7 +24,7 @@ func NewMySQLUserRepository(db *gorm.DB) ports.UserRepository {
 
 // Create cria um novo usuário no banco de dados
 func (r *mysqlUserRepository) Create(ctx context.Context, user *contracts.User) error {
-	userModel := &database.UserModel{}
+	userModel := &UserModel{}
 	userModel.FromContract(user)
 
 	if err := r.db.WithContext(ctx).Create(userModel).Error; err != nil {
@@ -37,7 +36,7 @@ func (r *mysqlUserRepository) Create(ctx context.Context, user *contracts.User) 
 
 // GetByID busca um usuário pelo ID
 func (r *mysqlUserRepository) GetByID(ctx context.Context, id string) (*contracts.User, error) {
-	var userModel database.UserModel
+	var userModel UserModel
 
 	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&userModel).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -51,7 +50,7 @@ func (r *mysqlUserRepository) GetByID(ctx context.Context, id string) (*contract
 
 // GetByEmail busca um usuário pelo email
 func (r *mysqlUserRepository) GetByEmail(ctx context.Context, email string) (*contracts.User, error) {
-	var userModel database.UserModel
+	var userModel UserModel
 
 	if err := r.db.WithContext(ctx).Where("email = ?", email).First(&userModel).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -65,7 +64,7 @@ func (r *mysqlUserRepository) GetByEmail(ctx context.Context, email string) (*co
 
 // Update atualiza um usuário existente
 func (r *mysqlUserRepository) Update(ctx context.Context, user *contracts.User) error {
-	userModel := &database.UserModel{}
+	userModel := &UserModel{}
 	userModel.FromContract(user)
 
 	result := r.db.WithContext(ctx).Where("id = ?", user.ID).Updates(userModel)
@@ -82,7 +81,7 @@ func (r *mysqlUserRepository) Update(ctx context.Context, user *contracts.User) 
 
 // Delete remove um usuário do banco de dados
 func (r *mysqlUserRepository) Delete(ctx context.Context, id string) error {
-	result := r.db.WithContext(ctx).Where("id = ?", id).Delete(&database.UserModel{})
+	result := r.db.WithContext(ctx).Where("id = ?", id).Delete(&UserModel{})
 	if result.Error != nil {
 		return fmt.Errorf("failed to delete user: %w", result.Error)
 	}

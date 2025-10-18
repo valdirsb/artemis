@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"meuApp/internal/shared/database"
 	"meuApp/pkg/contracts"
 
 	"gorm.io/gorm"
@@ -24,7 +23,7 @@ func NewMySQLOrderRepository(db *gorm.DB) contracts.OrderRepository {
 
 // Create cria um novo pedido no banco de dados
 func (r *mysqlOrderRepository) Create(ctx context.Context, order *contracts.Order) error {
-	orderModel := &database.OrderModel{}
+	orderModel := &OrderModel{}
 	orderModel.FromContract(order)
 
 	// Usar transação para garantir consistência entre order e order_items
@@ -46,7 +45,7 @@ func (r *mysqlOrderRepository) Create(ctx context.Context, order *contracts.Orde
 
 // GetByID busca um pedido pelo ID
 func (r *mysqlOrderRepository) GetByID(ctx context.Context, id string) (*contracts.Order, error) {
-	var orderModel database.OrderModel
+	var orderModel OrderModel
 
 	if err := r.db.WithContext(ctx).Preload("Items").Where("id = ?", id).First(&orderModel).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -60,7 +59,7 @@ func (r *mysqlOrderRepository) GetByID(ctx context.Context, id string) (*contrac
 
 // GetByUserID busca todos os pedidos de um usuário
 func (r *mysqlOrderRepository) GetByUserID(ctx context.Context, userID string) ([]*contracts.Order, error) {
-	var orderModels []database.OrderModel
+	var orderModels []OrderModel
 
 	if err := r.db.WithContext(ctx).Preload("Items").Where("user_id = ?", userID).Find(&orderModels).Error; err != nil {
 		return nil, fmt.Errorf("failed to get orders by user ID: %w", err)
@@ -76,13 +75,13 @@ func (r *mysqlOrderRepository) GetByUserID(ctx context.Context, userID string) (
 
 // Update atualiza um pedido existente
 func (r *mysqlOrderRepository) Update(ctx context.Context, order *contracts.Order) error {
-	orderModel := &database.OrderModel{}
+	orderModel := &OrderModel{}
 	orderModel.FromContract(order)
 
 	// Usar transação para atualizar order e order_items
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// Atualizar o pedido principal (sem os items)
-		result := tx.Model(&database.OrderModel{}).Where("id = ?", order.ID).Updates(map[string]interface{}{
+		result := tx.Model(&OrderModel{}).Where("id = ?", order.ID).Updates(map[string]interface{}{
 			"status":     orderModel.Status,
 			"total":      orderModel.Total,
 			"updated_at": orderModel.UpdatedAt,
@@ -97,7 +96,7 @@ func (r *mysqlOrderRepository) Update(ctx context.Context, order *contracts.Orde
 		}
 
 		// Remover items existentes
-		if err := tx.Where("order_id = ?", order.ID).Delete(&database.OrderItemModel{}).Error; err != nil {
+		if err := tx.Where("order_id = ?", order.ID).Delete(&OrderItemModel{}).Error; err != nil {
 			return fmt.Errorf("failed to delete existing order items: %w", err)
 		}
 
@@ -118,12 +117,12 @@ func (r *mysqlOrderRepository) Update(ctx context.Context, order *contracts.Orde
 func (r *mysqlOrderRepository) Delete(ctx context.Context, id string) error {
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// Remover items primeiro (foreign key constraint)
-		if err := tx.Where("order_id = ?", id).Delete(&database.OrderItemModel{}).Error; err != nil {
+		if err := tx.Where("order_id = ?", id).Delete(&OrderItemModel{}).Error; err != nil {
 			return fmt.Errorf("failed to delete order items: %w", err)
 		}
 
 		// Remover o pedido
-		result := tx.Where("id = ?", id).Delete(&database.OrderModel{})
+		result := tx.Where("id = ?", id).Delete(&OrderModel{})
 		if result.Error != nil {
 			return fmt.Errorf("failed to delete order: %w", result.Error)
 		}
