@@ -1,6 +1,6 @@
 # ✅ Checklist de Refatoração - Vista Rápida
 
-> **Progresso Geral:** 41% (38/92 tarefas)
+> **Progresso Geral:** 51% (48/94 tarefas)
 
 ## 🔴 ALTA PRIORIDADE
 
@@ -33,7 +33,7 @@
   - [x] Testar compilação
   - [x] Testar aplicação
 
-### 🔧 Fase 2: Interfaces e Contratos (14/23) ⏳
+### 🔧 Fase 2: Interfaces e Contratos (21/23) ⏳
 - [x] 2.1 Módulo User - Refatoração Completa (7/7) ✅
   - [x] Criar domain.User independente
   - [x] Criar ports.go com interfaces (Primary + Secondary)
@@ -50,14 +50,14 @@
   - [x] Atualizar service para usar domain.Product
   - [x] Atualizar bootstrap
   - [x] Testar compilação
-- [ ] 2.3 Módulo Order - Refatoração (0/7)
-  - [ ] Criar domain.Order independente
-  - [ ] Criar ports.go com interfaces
-  - [ ] Criar dto/ (requests, responses, mapper)
-  - [ ] Atualizar repository
-  - [ ] Atualizar service
-  - [ ] Atualizar bootstrap
-  - [ ] Testar compilação
+- [x] 2.3 Módulo Order - Refatoração (7/7) ✅
+  - [x] Criar domain.Order independente (+ OrderItem + OrderStatus)
+  - [x] Criar ports.go com interfaces
+  - [x] Criar dto/ (requests, responses, mapper)
+  - [x] Atualizar repository (ToDomain/FromDomain)
+  - [x] Atualizar service (usar ports de user/product)
+  - [x] Atualizar bootstrap
+  - [x] Testar compilação
 - [ ] 2.4 Atualizar Handlers (0/2)
   - [ ] Atualizar handlers para usar DTOs dos módulos
   - [ ] Remover dependências de pkg/contracts nos handlers
