@@ -1,12 +1,26 @@
 # ✅ Checklist de Refatoração - Vista Rápida
 
-> **Progresso Geral:** 0% (0/85 tarefas)
+> **Progresso Geral:** 8% (7/85 tarefas)
 
 ## 🔴 ALTA PRIORIDADE
 
-### 📦 Fase 1: Reorganização de Estrutura (0/24)
-- [ ] 1.1 Mover Database Models (0/6)
-- [ ] 1.2 Reorganizar internal/shared → pkg/adapters (0/8)
+### 📦 Fase 1: Reorganização de Estrutura (7/24) ⏳
+- [x] 1.1 Mover Database Models (6/6) ✅
+  - [x] Criar user_model.go
+  - [x] Criar product_model.go  
+  - [x] Criar order_model.go
+  - [x] Atualizar repositórios
+  - [x] Atualizar database.go
+  - [x] Testar e commit
+- [ ] 1.2 Reorganizar internal/shared → pkg/adapters (1/8) ⏳
+  - [x] Criar pkg/config/ e mover config.go
+  - [ ] Criar pkg/adapters/database/mysql/migrations.go
+  - [ ] Mover logger
+  - [ ] Mover middleware
+  - [ ] Atualizar imports do config
+  - [ ] Atualizar imports do database
+  - [ ] Remover internal/shared
+  - [ ] Testar completamente
 - [ ] 1.3 Atualizar todos os imports (0/10)
 
 ### 🔧 Fase 2: Interfaces e Contratos (0/15)
