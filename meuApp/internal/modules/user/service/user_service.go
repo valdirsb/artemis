@@ -43,11 +43,11 @@ func NewUserService(
 }
 
 // CreateUser cria um novo usuário
-func (s *UserService) CreateUser(ctx context.Context, req contracts.CreateUserRequest) (*contracts.User, error) {
-	s.logger.Info("Creating new user", contracts.Field{Key: "email", Value: req.Email})
+func (s *UserService) CreateUser(ctx context.Context, username, email, password string) (*domain.User, error) {
+	s.logger.Info("Creating new user", contracts.Field{Key: "email", Value: email})
 
 	// Verificar se o email já existe
-	existingUser, err := s.userRepo.GetByEmail(ctx, req.Email)
+	existingUser, err := s.userRepo.GetByEmail(ctx, email)
 	if err == nil && existingUser != nil {
 		return nil, errors.New("user with this email already exists")
 	}
@@ -56,14 +56,14 @@ func (s *UserService) CreateUser(ctx context.Context, req contracts.CreateUserRe
 	userID := uuid.New().String()
 
 	// Criar entidade de domínio
-	user, err := domain.NewUser(userID, req.Username, req.Email)
+	user, err := domain.NewUser(userID, username, email)
 	if err != nil {
 		s.logger.Error("Failed to create user domain entity", contracts.Field{Key: "error", Value: err})
 		return nil, err
 	}
 
 	// Hash da senha
-	hashedPassword, err := s.passwordHasher.Hash(req.Password)
+	hashedPassword, err := s.passwordHasher.Hash(password)
 	if err != nil {
 		s.logger.Error("Failed to hash password", contracts.Field{Key: "error", Value: err})
 		return nil, errors.New("failed to process password")
@@ -79,12 +79,7 @@ func (s *UserService) CreateUser(ctx context.Context, req contracts.CreateUserRe
 	}
 
 	// Persistir usuário
-	if err := s.userRepo.Create(ctx, &contracts.User{
-		ID:       userAggregate.GetUser().ID,
-		Username: userAggregate.GetUser().Username,
-		Email:    userAggregate.GetUser().Email,
-		Password: userAggregate.GetUser().Password,
-	}); err != nil {
+	if err := s.userRepo.Create(ctx, userAggregate.GetUser()); err != nil {
 		s.logger.Error("Failed to create user in repository", contracts.Field{Key: "error", Value: err})
 		return nil, errors.New("failed to create user")
 	}
@@ -95,7 +90,7 @@ func (s *UserService) CreateUser(ctx context.Context, req contracts.CreateUserRe
 		Timestamp: time.Now(),
 		Payload: contracts.UserCreatedEvent{
 			UserID: userID,
-			Email:  req.Email,
+			Email:  email,
 		},
 	}
 
@@ -105,17 +100,17 @@ func (s *UserService) CreateUser(ctx context.Context, req contracts.CreateUserRe
 
 	// Enviar email de boas-vindas (assíncrono)
 	go func() {
-		if err := s.emailService.SendWelcomeEmail(context.Background(), userID, req.Email); err != nil {
+		if err := s.emailService.SendWelcomeEmail(context.Background(), userID, email); err != nil {
 			s.logger.Warn("Failed to send welcome email", contracts.Field{Key: "error", Value: err})
 		}
 	}()
 
 	s.logger.Info("User created successfully", contracts.Field{Key: "user_id", Value: userID})
-	return &userAggregate.GetUser().User, nil
+	return userAggregate.GetUser(), nil
 }
 
 // GetUserByID obtém um usuário por ID
-func (s *UserService) GetUserByID(ctx context.Context, id string) (*contracts.User, error) {
+func (s *UserService) GetUserByID(ctx context.Context, id string) (*domain.User, error) {
 	if id == "" {
 		return nil, errors.New("user ID cannot be empty")
 	}
@@ -135,8 +130,29 @@ func (s *UserService) GetUserByID(ctx context.Context, id string) (*contracts.Us
 	return user, nil
 }
 
+// GetUserByEmail obtém um usuário por email
+func (s *UserService) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
+	if email == "" {
+		return nil, errors.New("email cannot be empty")
+	}
+
+	user, err := s.userRepo.GetByEmail(ctx, email)
+	if err != nil {
+		s.logger.Error("Failed to get user by email",
+			contracts.Field{Key: "email", Value: email},
+			contracts.Field{Key: "error", Value: err})
+		return nil, err
+	}
+
+	if user == nil {
+		return nil, errors.New("user not found")
+	}
+
+	return user, nil
+}
+
 // UpdateUser atualiza um usuário
-func (s *UserService) UpdateUser(ctx context.Context, id string, req contracts.UpdateUserRequest) (*contracts.User, error) {
+func (s *UserService) UpdateUser(ctx context.Context, id string, username, email *string) (*domain.User, error) {
 	// Buscar usuário existente
 	existingUser, err := s.userRepo.GetByID(ctx, id)
 	if err != nil {
@@ -147,22 +163,18 @@ func (s *UserService) UpdateUser(ctx context.Context, id string, req contracts.U
 		return nil, errors.New("user not found")
 	}
 
-	userDomain := &domain.User{
-		User: *existingUser,
-	}
-
 	// Criar aggregate
-	userAggregate := domain.NewUserAggregate(userDomain)
+	userAggregate := domain.NewUserAggregate(existingUser)
 
 	// Aplicar atualizações
-	if req.Email != nil {
-		if err := userAggregate.UpdateEmail(*req.Email); err != nil {
+	if email != nil {
+		if err := userAggregate.UpdateEmail(*email); err != nil {
 			return nil, err
 		}
 	}
 
-	if req.Username != nil {
-		if err := userAggregate.UpdateUsername(*req.Username); err != nil {
+	if username != nil {
+		if err := userAggregate.UpdateUsername(*username); err != nil {
 			return nil, err
 		}
 	}
@@ -173,13 +185,13 @@ func (s *UserService) UpdateUser(ctx context.Context, id string, req contracts.U
 	}
 
 	// Persistir alterações
-	if err := s.userRepo.Update(ctx, existingUser); err != nil {
+	if err := s.userRepo.Update(ctx, userAggregate.GetUser()); err != nil {
 		s.logger.Error("Failed to update user in repository", contracts.Field{Key: "error", Value: err})
 		return nil, errors.New("failed to update user")
 	}
 
 	s.logger.Info("User updated successfully", contracts.Field{Key: "user_id", Value: id})
-	return &userAggregate.GetUser().User, nil
+	return userAggregate.GetUser(), nil
 }
 
 // DeleteUser remove um usuário
@@ -219,8 +231,8 @@ func (s *UserService) DeleteUser(ctx context.Context, id string) error {
 	return nil
 }
 
-// ValidateUser valida credenciais de usuário
-func (s *UserService) ValidateUser(ctx context.Context, email, password string) (*contracts.User, error) {
+// ValidateCredentials valida credenciais de usuário
+func (s *UserService) ValidateCredentials(ctx context.Context, email, password string) (*domain.User, error) {
 	if email == "" || password == "" {
 		return nil, errors.New("email and password are required")
 	}

@@ -3,6 +3,7 @@ package bootstrap
 import (
 	orderService "meuApp/internal/modules/order/service"
 	productService "meuApp/internal/modules/product/service"
+	userPorts "meuApp/internal/modules/user/ports"
 	userService "meuApp/internal/modules/user/service"
 	"meuApp/pkg/contracts"
 )
@@ -10,13 +11,13 @@ import (
 func (s *Bootstrap) StartServices() {
 
 	eventPublisher := s.container.MustGet("eventbus").(contracts.EventPublisher)
-	passwordHasher := s.container.MustGet("passwordHasher").(contracts.PasswordHasher)
-	emailService := s.container.MustGet("emailService").(contracts.EmailService)
-	tokenGenerator := s.container.MustGet("tokenGenerator").(contracts.TokenGenerator)
+	passwordHasher := s.container.MustGet("passwordHasher").(userPorts.PasswordHasher)
+	emailService := s.container.MustGet("emailService").(userPorts.EmailService)
+	tokenGenerator := s.container.MustGet("tokenGenerator").(userPorts.TokenGenerator)
 	logger := s.container.MustGet("logger").(contracts.Logger)
 
 	// User
-	userRepo := s.container.MustGet("userRepository").(contracts.UserRepository)
+	userRepo := s.container.MustGet("userRepository").(userPorts.UserRepository)
 	s.Services["userService"] = userService.NewUserService(userRepo, passwordHasher, emailService, tokenGenerator, eventPublisher, logger)
 
 	// Product
