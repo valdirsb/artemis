@@ -3,13 +3,35 @@ package domain
 import (
 	"errors"
 	"time"
-
-	"meuApp/pkg/contracts"
 )
+
+// OrderStatus representa os possíveis status de um pedido
+type OrderStatus string
+
+const (
+	OrderStatusPending   OrderStatus = "pending"
+	OrderStatusConfirmed OrderStatus = "confirmed"
+	OrderStatusShipped   OrderStatus = "shipped"
+	OrderStatusDelivered OrderStatus = "delivered"
+	OrderStatusCancelled OrderStatus = "cancelled"
+)
+
+// OrderItem representa um item do pedido
+type OrderItem struct {
+	ProductID string
+	Quantity  int
+	Price     float64
+}
 
 // Order representa a entidade de domínio do pedido
 type Order struct {
-	contracts.Order
+	ID        string
+	UserID    string
+	Items     []OrderItem
+	Status    OrderStatus
+	Total     float64
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 // OrderAggregate contém as regras de negócio do pedido
@@ -18,7 +40,7 @@ type OrderAggregate struct {
 }
 
 // NewOrder cria um novo pedido com validações de domínio
-func NewOrder(id, userID string, items []contracts.OrderItem) (*Order, error) {
+func NewOrder(id, userID string, items []OrderItem) (*Order, error) {
 	if err := validateUserID(userID); err != nil {
 		return nil, err
 	}
@@ -30,15 +52,13 @@ func NewOrder(id, userID string, items []contracts.OrderItem) (*Order, error) {
 	total := calculateTotal(items)
 
 	return &Order{
-		Order: contracts.Order{
-			ID:        id,
-			UserID:    userID,
-			Items:     items,
-			Status:    contracts.OrderStatusPending,
-			Total:     total,
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-		},
+		ID:        id,
+		UserID:    userID,
+		Items:     items,
+		Status:    OrderStatusPending,
+		Total:     total,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}, nil
 }
 
@@ -48,7 +68,7 @@ func NewOrderAggregate(order *Order) *OrderAggregate {
 }
 
 // UpdateStatus atualiza o status do pedido com validação
-func (oa *OrderAggregate) UpdateStatus(newStatus contracts.OrderStatus) error {
+func (oa *OrderAggregate) UpdateStatus(newStatus OrderStatus) error {
 	if err := validateStatusTransition(oa.order.Status, newStatus); err != nil {
 		return err
 	}
@@ -60,26 +80,26 @@ func (oa *OrderAggregate) UpdateStatus(newStatus contracts.OrderStatus) error {
 
 // Cancel cancela o pedido se possível
 func (oa *OrderAggregate) Cancel() error {
-	if oa.order.Status == contracts.OrderStatusDelivered {
+	if oa.order.Status == OrderStatusDelivered {
 		return errors.New("cannot cancel delivered order")
 	}
 
-	if oa.order.Status == contracts.OrderStatusCancelled {
+	if oa.order.Status == OrderStatusCancelled {
 		return errors.New("order is already cancelled")
 	}
 
-	oa.order.Status = contracts.OrderStatusCancelled
+	oa.order.Status = OrderStatusCancelled
 	oa.order.UpdatedAt = time.Now()
 	return nil
 }
 
 // AddItem adiciona um item ao pedido
-func (oa *OrderAggregate) AddItem(item contracts.OrderItem) error {
+func (oa *OrderAggregate) AddItem(item OrderItem) error {
 	if err := validateOrderItem(item); err != nil {
 		return err
 	}
 
-	if oa.order.Status != contracts.OrderStatusPending {
+	if oa.order.Status != OrderStatusPending {
 		return errors.New("can only add items to pending orders")
 	}
 
@@ -124,7 +144,7 @@ func validateUserID(userID string) error {
 	return nil
 }
 
-func validateItems(items []contracts.OrderItem) error {
+func validateItems(items []OrderItem) error {
 	if len(items) == 0 {
 		return errors.New("order must have at least one item")
 	}
@@ -138,7 +158,7 @@ func validateItems(items []contracts.OrderItem) error {
 	return nil
 }
 
-func validateOrderItem(item contracts.OrderItem) error {
+func validateOrderItem(item OrderItem) error {
 	if item.ProductID == "" {
 		return errors.New("product ID cannot be empty")
 	}
@@ -154,13 +174,13 @@ func validateOrderItem(item contracts.OrderItem) error {
 	return nil
 }
 
-func validateStatusTransition(currentStatus, newStatus contracts.OrderStatus) error {
-	validTransitions := map[contracts.OrderStatus][]contracts.OrderStatus{
-		contracts.OrderStatusPending:   {contracts.OrderStatusConfirmed, contracts.OrderStatusCancelled},
-		contracts.OrderStatusConfirmed: {contracts.OrderStatusShipped, contracts.OrderStatusCancelled},
-		contracts.OrderStatusShipped:   {contracts.OrderStatusDelivered},
-		contracts.OrderStatusDelivered: {}, // Status final
-		contracts.OrderStatusCancelled: {}, // Status final
+func validateStatusTransition(currentStatus, newStatus OrderStatus) error {
+	validTransitions := map[OrderStatus][]OrderStatus{
+		OrderStatusPending:   {OrderStatusConfirmed, OrderStatusCancelled},
+		OrderStatusConfirmed: {OrderStatusShipped, OrderStatusCancelled},
+		OrderStatusShipped:   {OrderStatusDelivered},
+		OrderStatusDelivered: {}, // Status final
+		OrderStatusCancelled: {}, // Status final
 	}
 
 	allowedStatuses, exists := validTransitions[currentStatus]
@@ -177,7 +197,7 @@ func validateStatusTransition(currentStatus, newStatus contracts.OrderStatus) er
 	return errors.New("invalid status transition from " + string(currentStatus) + " to " + string(newStatus))
 }
 
-func calculateTotal(items []contracts.OrderItem) float64 {
+func calculateTotal(items []OrderItem) float64 {
 	total := 0.0
 	for _, item := range items {
 		total += item.Price * float64(item.Quantity)

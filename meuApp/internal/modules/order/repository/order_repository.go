@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"meuApp/pkg/contracts"
+	"meuApp/internal/modules/order/domain"
+	"meuApp/internal/modules/order/ports"
 
 	"gorm.io/gorm"
 )
@@ -15,16 +16,16 @@ type mysqlOrderRepository struct {
 }
 
 // NewMySQLOrderRepository cria uma nova instância do repositório MySQL
-func NewMySQLOrderRepository(db *gorm.DB) contracts.OrderRepository {
+func NewMySQLOrderRepository(db *gorm.DB) ports.OrderRepository {
 	return &mysqlOrderRepository{
 		db: db,
 	}
 }
 
 // Create cria um novo pedido no banco de dados
-func (r *mysqlOrderRepository) Create(ctx context.Context, order *contracts.Order) error {
+func (r *mysqlOrderRepository) Create(ctx context.Context, order *domain.Order) error {
 	orderModel := &OrderModel{}
-	orderModel.FromContract(order)
+	orderModel.FromDomain(order)
 
 	// Usar transação para garantir consistência entre order e order_items
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -44,7 +45,7 @@ func (r *mysqlOrderRepository) Create(ctx context.Context, order *contracts.Orde
 }
 
 // GetByID busca um pedido pelo ID
-func (r *mysqlOrderRepository) GetByID(ctx context.Context, id string) (*contracts.Order, error) {
+func (r *mysqlOrderRepository) GetByID(ctx context.Context, id string) (*domain.Order, error) {
 	var orderModel OrderModel
 
 	if err := r.db.WithContext(ctx).Preload("Items").Where("id = ?", id).First(&orderModel).Error; err != nil {
@@ -54,29 +55,29 @@ func (r *mysqlOrderRepository) GetByID(ctx context.Context, id string) (*contrac
 		return nil, fmt.Errorf("failed to get order by ID: %w", err)
 	}
 
-	return orderModel.ToContract(), nil
+	return orderModel.ToDomain(), nil
 }
 
 // GetByUserID busca todos os pedidos de um usuário
-func (r *mysqlOrderRepository) GetByUserID(ctx context.Context, userID string) ([]*contracts.Order, error) {
+func (r *mysqlOrderRepository) GetByUserID(ctx context.Context, userID string) ([]*domain.Order, error) {
 	var orderModels []OrderModel
 
 	if err := r.db.WithContext(ctx).Preload("Items").Where("user_id = ?", userID).Find(&orderModels).Error; err != nil {
 		return nil, fmt.Errorf("failed to get orders by user ID: %w", err)
 	}
 
-	orders := make([]*contracts.Order, len(orderModels))
+	orders := make([]*domain.Order, len(orderModels))
 	for i, model := range orderModels {
-		orders[i] = model.ToContract()
+		orders[i] = model.ToDomain()
 	}
 
 	return orders, nil
 }
 
 // Update atualiza um pedido existente
-func (r *mysqlOrderRepository) Update(ctx context.Context, order *contracts.Order) error {
+func (r *mysqlOrderRepository) Update(ctx context.Context, order *domain.Order) error {
 	orderModel := &OrderModel{}
-	orderModel.FromContract(order)
+	orderModel.FromDomain(order)
 
 	// Usar transação para atualizar order e order_items
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {

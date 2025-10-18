@@ -3,7 +3,7 @@ package repository
 import (
 	"time"
 
-	"meuApp/pkg/contracts"
+	"meuApp/internal/modules/order/domain"
 )
 
 // OrderModel representa a estrutura da tabela orders no banco
@@ -36,30 +36,30 @@ func (OrderItemModel) TableName() string {
 	return "order_items"
 }
 
-// ToContract converte OrderModel para contracts.Order
-func (o *OrderModel) ToContract() *contracts.Order {
-	items := make([]contracts.OrderItem, len(o.Items))
+// ToDomain converte OrderModel para domain.Order
+func (o *OrderModel) ToDomain() *domain.Order {
+	items := make([]domain.OrderItem, len(o.Items))
 	for i, item := range o.Items {
-		items[i] = contracts.OrderItem{
+		items[i] = domain.OrderItem{
 			ProductID: item.ProductID,
 			Quantity:  item.Quantity,
 			Price:     item.Price,
 		}
 	}
 
-	return &contracts.Order{
+	return &domain.Order{
 		ID:        o.ID,
 		UserID:    o.UserID,
 		Items:     items,
-		Status:    contracts.OrderStatus(o.Status),
+		Status:    domain.OrderStatus(o.Status),
 		Total:     o.Total,
 		CreatedAt: o.CreatedAt,
 		UpdatedAt: o.UpdatedAt,
 	}
 }
 
-// FromContract converte contracts.Order para OrderModel
-func (o *OrderModel) FromContract(order *contracts.Order) {
+// FromDomain converte domain.Order para OrderModel
+func (o *OrderModel) FromDomain(order *domain.Order) {
 	o.ID = order.ID
 	o.UserID = order.UserID
 	o.Status = string(order.Status)
