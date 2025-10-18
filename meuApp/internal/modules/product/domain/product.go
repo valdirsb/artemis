@@ -4,13 +4,18 @@ import (
 	"errors"
 	"time"
 	"unicode/utf8"
-
-	"meuApp/pkg/contracts"
 )
 
 // Product representa a entidade de domínio do produto
 type Product struct {
-	contracts.Product
+	ID          string
+	Name        string
+	Description string
+	Price       float64
+	Stock       int
+	CategoryID  string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 // ProductAggregate contém as regras de negócio do produto
@@ -41,59 +46,20 @@ func NewProduct(id, name, description, categoryID string, price float64, stock i
 	}
 
 	return &Product{
-		Product: contracts.Product{
-			ID:          id,
-			Name:        name,
-			Description: description,
-			Price:       price,
-			Stock:       stock,
-			CategoryID:  categoryID,
-			CreatedAt:   time.Now(),
-			UpdatedAt:   time.Now(),
-		},
+		ID:          id,
+		Name:        name,
+		Description: description,
+		Price:       price,
+		Stock:       stock,
+		CategoryID:  categoryID,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}, nil
 }
 
 // NewProductAggregate cria um novo aggregate de produto
 func NewProductAggregate(product *Product) *ProductAggregate {
 	return &ProductAggregate{product: product}
-}
-
-// NewProductAggregateFromRequest cria um aggregate a partir de um request
-func NewProductAggregateFromRequest(req contracts.CreateProductRequest) (*ProductAggregate, error) {
-	if err := validateName(req.Name); err != nil {
-		return nil, err
-	}
-
-	if err := validateDescription(req.Description); err != nil {
-		return nil, err
-	}
-
-	if err := validatePrice(req.Price); err != nil {
-		return nil, err
-	}
-
-	if err := validateStock(req.Stock); err != nil {
-		return nil, err
-	}
-
-	if err := validateCategoryID(req.CategoryID); err != nil {
-		return nil, err
-	}
-
-	product := &Product{
-		Product: contracts.Product{
-			Name:        req.Name,
-			Description: req.Description,
-			Price:       req.Price,
-			Stock:       req.Stock,
-			CategoryID:  req.CategoryID,
-			CreatedAt:   time.Now(),
-			UpdatedAt:   time.Now(),
-		},
-	}
-
-	return &ProductAggregate{product: product}, nil
 }
 
 // UpdateName atualiza o nome do produto com validação

@@ -3,7 +3,7 @@ package repository
 import (
 	"time"
 
-	"meuApp/pkg/contracts"
+	"meuApp/internal/modules/product/domain"
 )
 
 // ProductModel representa a estrutura da tabela products no banco
@@ -23,9 +23,9 @@ func (ProductModel) TableName() string {
 	return "products"
 }
 
-// ToContract converte ProductModel para contracts.Product
-func (p *ProductModel) ToContract() *contracts.Product {
-	return &contracts.Product{
+// ToDomain converte ProductModel para domain.Product
+func (p *ProductModel) ToDomain() *domain.Product {
+	return &domain.Product{
 		ID:          p.ID,
 		Name:        p.Name,
 		Description: p.Description,
@@ -37,8 +37,8 @@ func (p *ProductModel) ToContract() *contracts.Product {
 	}
 }
 
-// FromContract converte contracts.Product para ProductModel
-func (p *ProductModel) FromContract(product *contracts.Product) {
+// FromDomain converte domain.Product para ProductModel
+func (p *ProductModel) FromDomain(product *domain.Product) {
 	p.ID = product.ID
 	p.Name = product.Name
 	p.Description = product.Description
