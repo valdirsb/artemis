@@ -10,7 +10,6 @@ import (
 	userHandler "meuApp/internal/modules/user/handler"
 	userPorts "meuApp/internal/modules/user/ports"
 	"meuApp/pkg/container"
-	"meuApp/pkg/contracts"
 	"meuApp/pkg/framework"
 	"meuApp/pkg/framework/providers"
 	grpcProvider "meuApp/pkg/framework/providers/grpc"
@@ -58,8 +57,8 @@ func registerGRPCServices(c *container.Container, fw *framework.Framework) {
 
 	// Register User gRPC Service
 	if framework.IsEnabled("modules", "user") {
-		userSvc := c.MustGet("userService").(contracts.UserService)
-		userRepo := c.MustGet("userRepository").(contracts.UserRepository)
+		userSvc := c.MustGet("userService").(userPorts.UserService)
+		userRepo := c.MustGet("userRepository").(userPorts.UserRepository)
 		userGRPCService := userHandler.NewUserGRPCHandler(userSvc, userRepo)
 		grpcProvider.RegisterService(userGRPCService)
 		log.Printf("✅ User gRPC service registered")
@@ -67,7 +66,7 @@ func registerGRPCServices(c *container.Container, fw *framework.Framework) {
 
 	// Register Product gRPC Service
 	if framework.IsEnabled("modules", "product") {
-		productSvc := c.MustGet("productService").(contracts.ProductService)
+		productSvc := c.MustGet("productService").(productPorts.ProductService)
 		productGRPCService := productHandler.NewGRPCHandler(productSvc)
 		grpcProvider.RegisterService(productGRPCService)
 		log.Printf("✅ Product gRPC service registered")
@@ -75,7 +74,7 @@ func registerGRPCServices(c *container.Container, fw *framework.Framework) {
 
 	// Register Order gRPC Service
 	if framework.IsEnabled("modules", "order") {
-		orderSvc := c.MustGet("orderService").(contracts.OrderService)
+		orderSvc := c.MustGet("orderService").(orderPorts.OrderService)
 		orderGRPCService := orderHandler.NewOrderGRPCHandler(orderSvc)
 		grpcProvider.RegisterService(orderGRPCService)
 		log.Printf("✅ Order gRPC service registered")

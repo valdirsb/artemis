@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"meuApp/pkg/contracts"
+	"meuApp/internal/modules/user/dto"
+	"meuApp/internal/modules/user/ports"
 	pb "meuApp/pkg/proto"
 
 	"google.golang.org/grpc"
@@ -16,12 +17,12 @@ import (
 // UserGRPCHandler implements the gRPC UserService
 type UserGRPCHandler struct {
 	pb.UnimplementedUserServiceServer
-	userService contracts.UserService
-	userRepo    contracts.UserRepository
+	userService ports.UserService
+	userRepo    ports.UserRepository
 }
 
 // NewUserGRPCHandler creates a new gRPC user service
-func NewUserGRPCHandler(userService contracts.UserService, userRepo contracts.UserRepository) *UserGRPCHandler {
+func NewUserGRPCHandler(userService ports.UserService, userRepo ports.UserRepository) *UserGRPCHandler {
 	return &UserGRPCHandler{
 		userService: userService,
 		userRepo:    userRepo,
@@ -46,26 +47,20 @@ func (s *UserGRPCHandler) CreateUser(ctx context.Context, req *pb.CreateUserRequ
 		return nil, status.Error(codes.InvalidArgument, "password is required")
 	}
 
-	// Create user request
-	createReq := contracts.CreateUserRequest{
-		Username: req.Name,
-		Email:    req.Email,
-		Password: req.Password,
-	}
-
-	// Call service
-	user, err := s.userService.CreateUser(ctx, createReq)
+	// Call service with individual parameters
+	user, err := s.userService.CreateUser(ctx, req.Name, req.Email, req.Password)
 	if err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to create user: %v", err))
 	}
 
 	// Convert to proto message
+	userResponse := dto.ToUserResponse(user)
 	protoUser := &pb.User{
-		Id:        user.ID,
-		Name:      user.Username,
-		Email:     user.Email,
-		CreatedAt: user.CreatedAt.Format(time.RFC3339),
-		UpdatedAt: user.UpdatedAt.Format(time.RFC3339),
+		Id:        userResponse.ID,
+		Name:      userResponse.Username,
+		Email:     userResponse.Email,
+		CreatedAt: userResponse.CreatedAt.Format(time.RFC3339),
+		UpdatedAt: userResponse.UpdatedAt.Format(time.RFC3339),
 	}
 
 	return &pb.CreateUserResponse{
@@ -107,22 +102,19 @@ func (s *UserGRPCHandler) UpdateUser(ctx context.Context, req *pb.UpdateUserRequ
 
 	name := req.Name
 	email := req.Email
-	updateReq := contracts.UpdateUserRequest{
-		Username: &name,
-		Email:    &email,
-	}
 
-	user, err := s.userService.UpdateUser(ctx, req.Id, updateReq)
+	user, err := s.userService.UpdateUser(ctx, req.Id, &name, &email)
 	if err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to update user: %v", err))
 	}
 
+	userResponse := dto.ToUserResponse(user)
 	protoUser := &pb.User{
-		Id:        user.ID,
-		Name:      user.Username,
-		Email:     user.Email,
-		CreatedAt: user.CreatedAt.Format(time.RFC3339),
-		UpdatedAt: user.UpdatedAt.Format(time.RFC3339),
+		Id:        userResponse.ID,
+		Name:      userResponse.Username,
+		Email:     userResponse.Email,
+		CreatedAt: userResponse.CreatedAt.Format(time.RFC3339),
+		UpdatedAt: userResponse.UpdatedAt.Format(time.RFC3339),
 	}
 
 	return &pb.UpdateUserResponse{
@@ -171,12 +163,13 @@ func (s *UserGRPCHandler) GetUserByEmail(ctx context.Context, req *pb.GetUserByE
 		return nil, status.Error(codes.NotFound, fmt.Sprintf("user not found: %v", err))
 	}
 
+	userResponse := dto.ToUserResponse(user)
 	protoUser := &pb.User{
-		Id:        user.ID,
-		Name:      user.Username,
-		Email:     user.Email,
-		CreatedAt: user.CreatedAt.Format(time.RFC3339),
-		UpdatedAt: user.UpdatedAt.Format(time.RFC3339),
+		Id:        userResponse.ID,
+		Name:      userResponse.Username,
+		Email:     userResponse.Email,
+		CreatedAt: userResponse.CreatedAt.Format(time.RFC3339),
+		UpdatedAt: userResponse.UpdatedAt.Format(time.RFC3339),
 	}
 
 	return &pb.GetUserResponse{

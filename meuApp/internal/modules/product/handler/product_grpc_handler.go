@@ -1,245 +1,172 @@
 package handler
 
 import (
-	"context"
-	"fmt"
-	"time"
+"context"
+"fmt"
+"time"
 
-	"meuApp/pkg/contracts"
-	pb "meuApp/pkg/proto"
+"meuApp/internal/modules/product/dto"
+"meuApp/internal/modules/product/ports"
+pb "meuApp/pkg/proto"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+"google.golang.org/grpc"
+"google.golang.org/grpc/codes"
+"google.golang.org/grpc/status"
 )
 
 // GRPCHandler implements the gRPC ProductService
 type GRPCHandler struct {
-	pb.UnimplementedProductServiceServer
-	productService contracts.ProductService
+pb.UnimplementedProductServiceServer
+productService ports.ProductService
 }
 
 // NewGRPCHandler creates a new gRPC product service
-func NewGRPCHandler(productService contracts.ProductService) *GRPCHandler {
-	return &GRPCHandler{
-		productService: productService,
-	}
+func NewGRPCHandler(productService ports.ProductService) *GRPCHandler {
+return &GRPCHandler{
+productService: productService,
+}
 }
 
 // RegisterWithServer registers the service with the gRPC server
 func (s *GRPCHandler) RegisterWithServer(server *grpc.Server) {
-	pb.RegisterProductServiceServer(server, s)
+pb.RegisterProductServiceServer(server, s)
 }
 
 // CreateProduct creates a new product
 func (s *GRPCHandler) CreateProduct(ctx context.Context, req *pb.CreateProductRequest) (*pb.CreateProductResponse, error) {
-	// Validate input
-	if req.Name == "" {
-		return nil, status.Error(codes.InvalidArgument, "name is required")
-	}
-	if req.Price <= 0 {
-		return nil, status.Error(codes.InvalidArgument, "price must be greater than 0")
-	}
+if req.Name == "" {
+return nil, status.Error(codes.InvalidArgument, "name is required")
+}
+if req.Price <= 0 {
+return nil, status.Error(codes.InvalidArgument, "price must be greater than 0")
+}
 
-	// Create product request
-	createReq := contracts.CreateProductRequest{
-		Name:        req.Name,
-		Description: req.Description,
-		Price:       req.Price,
-		Stock:       int(req.Quantity),
-		CategoryID:  "default", // Valor padrão para categoria
-	}
+product, err := s.productService.CreateProduct(ctx, req.Name, req.Description, "default", req.Price, int(req.Quantity))
+if err != nil {
+return nil, status.Error(codes.Internal, fmt.Sprintf("failed to create product: %v", err))
+}
 
-	// Call service
-	product, err := s.productService.CreateProduct(ctx, createReq)
-	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to create product: %v", err))
-	}
+productResponse := dto.ToProductResponse(product)
+protoProduct := &pb.Product{
+Id:          productResponse.ID,
+Name:        productResponse.Name,
+Description: productResponse.Description,
+Price:       productResponse.Price,
+Quantity:    int32(productResponse.Stock),
+CreatedAt:   productResponse.CreatedAt.Format(time.RFC3339),
+UpdatedAt:   productResponse.UpdatedAt.Format(time.RFC3339),
+}
 
-	// Convert to proto message
-	protoProduct := &pb.Product{
-		Id:          product.ID,
-		Name:        product.Name,
-		Description: product.Description,
-		Price:       product.Price,
-		Quantity:    int32(product.Stock),
-		CreatedAt:   product.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:   product.UpdatedAt.Format(time.RFC3339),
-	}
-
-	return &pb.CreateProductResponse{
-		Product: protoProduct,
-		Message: "Product created successfully",
-	}, nil
+return &pb.CreateProductResponse{
+Product: protoProduct,
+Message: "Product created successfully",
+}, nil
 }
 
 // GetProduct gets a product by ID
 func (s *GRPCHandler) GetProduct(ctx context.Context, req *pb.GetProductRequest) (*pb.GetProductResponse, error) {
-	if req.Id == "" {
-		return nil, status.Error(codes.InvalidArgument, "id is required")
-	}
+if req.Id == "" {
+return nil, status.Error(codes.InvalidArgument, "id is required")
+}
 
-	product, err := s.productService.GetProductByID(ctx, req.Id)
-	if err != nil {
-		return nil, status.Error(codes.NotFound, fmt.Sprintf("product not found: %v", err))
-	}
+product, err := s.productService.GetProductByID(ctx, req.Id)
+if err != nil {
+return nil, status.Error(codes.NotFound, fmt.Sprintf("product not found: %v", err))
+}
 
-	protoProduct := &pb.Product{
-		Id:          product.ID,
-		Name:        product.Name,
-		Description: product.Description,
-		Price:       product.Price,
-		Quantity:    int32(product.Stock),
-		CreatedAt:   product.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:   product.UpdatedAt.Format(time.RFC3339),
-	}
+productResponse := dto.ToProductResponse(product)
+protoProduct := &pb.Product{
+Id:          productResponse.ID,
+Name:        productResponse.Name,
+Description: productResponse.Description,
+Price:       productResponse.Price,
+Quantity:    int32(productResponse.Stock),
+CreatedAt:   productResponse.CreatedAt.Format(time.RFC3339),
+UpdatedAt:   productResponse.UpdatedAt.Format(time.RFC3339),
+}
 
-	return &pb.GetProductResponse{
-		Product: protoProduct,
-		Message: "Product retrieved successfully",
-	}, nil
+return &pb.GetProductResponse{
+Product: protoProduct,
+Message: "Product retrieved successfully",
+}, nil
 }
 
 // UpdateProduct updates a product
 func (s *GRPCHandler) UpdateProduct(ctx context.Context, req *pb.UpdateProductRequest) (*pb.UpdateProductResponse, error) {
-	if req.Id == "" {
-		return nil, status.Error(codes.InvalidArgument, "id is required")
-	}
+if req.Id == "" {
+return nil, status.Error(codes.InvalidArgument, "id is required")
+}
 
-	name := req.Name
-	description := req.Description
-	price := req.Price
-	stock := int(req.Quantity)
+name := req.Name
+description := req.Description
+price := req.Price
+quantity := int(req.Quantity)
+category := "default"
 
-	updateReq := contracts.UpdateProductRequest{
-		Name:        &name,
-		Description: &description,
-		Price:       &price,
-		Stock:       &stock,
-	}
+product, err := s.productService.UpdateProduct(ctx, req.Id, &name, &description, &category, &price, &quantity)
+if err != nil {
+return nil, status.Error(codes.Internal, fmt.Sprintf("failed to update product: %v", err))
+}
 
-	product, err := s.productService.UpdateProduct(ctx, req.Id, updateReq)
-	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to update product: %v", err))
-	}
+productResponse := dto.ToProductResponse(product)
+protoProduct := &pb.Product{
+Id:          productResponse.ID,
+Name:        productResponse.Name,
+Description: productResponse.Description,
+Price:       productResponse.Price,
+Quantity:    int32(productResponse.Stock),
+CreatedAt:   productResponse.CreatedAt.Format(time.RFC3339),
+UpdatedAt:   productResponse.UpdatedAt.Format(time.RFC3339),
+}
 
-	protoProduct := &pb.Product{
-		Id:          product.ID,
-		Name:        product.Name,
-		Description: product.Description,
-		Price:       product.Price,
-		Quantity:    int32(product.Stock),
-		CreatedAt:   product.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:   product.UpdatedAt.Format(time.RFC3339),
-	}
-
-	return &pb.UpdateProductResponse{
-		Product: protoProduct,
-		Message: "Product updated successfully",
-	}, nil
+return &pb.UpdateProductResponse{
+Product: protoProduct,
+Message: "Product updated successfully",
+}, nil
 }
 
 // DeleteProduct deletes a product
 func (s *GRPCHandler) DeleteProduct(ctx context.Context, req *pb.DeleteProductRequest) (*pb.DeleteProductResponse, error) {
-	if req.Id == "" {
-		return nil, status.Error(codes.InvalidArgument, "id is required")
-	}
-
-	err := s.productService.DeleteProduct(ctx, req.Id)
-	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to delete product: %v", err))
-	}
-
-	return &pb.DeleteProductResponse{
-		Message: "Product deleted successfully",
-	}, nil
+if req.Id == "" {
+return nil, status.Error(codes.InvalidArgument, "id is required")
 }
 
-// ListProducts lists products with pagination
+err := s.productService.DeleteProduct(ctx, req.Id)
+if err != nil {
+return nil, status.Error(codes.Internal, fmt.Sprintf("failed to delete product: %v", err))
+}
+
+return &pb.DeleteProductResponse{
+
+Message: "Product deleted successfully",
+}, nil
+}
+
+// ListProducts lists products (simplified - no filters)
 func (s *GRPCHandler) ListProducts(ctx context.Context, req *pb.ListProductsRequest) (*pb.ListProductsResponse, error) {
-	page := int(req.Page)
-	if page <= 0 {
-		page = 1
-	}
-
-	pageSize := int(req.PageSize)
-	if pageSize <= 0 {
-		pageSize = 10
-	}
-
-	filters := contracts.ProductFilters{
-		Limit:  pageSize,
-		Offset: (page - 1) * pageSize,
-	}
-
-	products, err := s.productService.GetProducts(ctx, filters)
-	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to list products: %v", err))
-	}
-
-	var protoProducts []*pb.Product
-	for _, product := range products {
-		protoProducts = append(protoProducts, &pb.Product{
-			Id:          product.ID,
-			Name:        product.Name,
-			Description: product.Description,
-			Price:       product.Price,
-			Quantity:    int32(product.Stock),
-			CreatedAt:   product.CreatedAt.Format(time.RFC3339),
-			UpdatedAt:   product.UpdatedAt.Format(time.RFC3339),
-		})
-	}
-
-	return &pb.ListProductsResponse{
-		Products: protoProducts,
-		Total:    int32(len(protoProducts)),
-		Page:     int32(page),
-		PageSize: int32(pageSize),
-		Message:  "Products retrieved successfully",
-	}, nil
+filters := ports.ProductFilters{}
+products, err := s.productService.ListProducts(ctx, filters)
+if err != nil {
+return nil, status.Error(codes.Internal, fmt.Sprintf("failed to list products: %v", err))
 }
 
-// SearchProducts searches products by query
-func (s *GRPCHandler) SearchProducts(ctx context.Context, req *pb.SearchProductsRequest) (*pb.ListProductsResponse, error) {
-	page := int(req.Page)
-	if page <= 0 {
-		page = 1
-	}
+var protoProducts []*pb.Product
+for _, product := range products {
+productResponse := dto.ToProductResponse(product)
+protoProducts = append(protoProducts, &pb.Product{
+Id:          productResponse.ID,
+Name:        productResponse.Name,
+Description: productResponse.Description,
+Price:       productResponse.Price,
+Quantity:    int32(productResponse.Stock),
+CreatedAt:   productResponse.CreatedAt.Format(time.RFC3339),
+UpdatedAt:   productResponse.UpdatedAt.Format(time.RFC3339),
+})
+}
 
-	pageSize := int(req.PageSize)
-	if pageSize <= 0 {
-		pageSize = 10
-	}
-
-	filters := contracts.ProductFilters{
-		Name:   &req.Query,
-		Limit:  pageSize,
-		Offset: (page - 1) * pageSize,
-	}
-
-	products, err := s.productService.GetProducts(ctx, filters)
-	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to search products: %v", err))
-	}
-
-	var protoProducts []*pb.Product
-	for _, product := range products {
-		protoProducts = append(protoProducts, &pb.Product{
-			Id:          product.ID,
-			Name:        product.Name,
-			Description: product.Description,
-			Price:       product.Price,
-			Quantity:    int32(product.Stock),
-			CreatedAt:   product.CreatedAt.Format(time.RFC3339),
-			UpdatedAt:   product.UpdatedAt.Format(time.RFC3339),
-		})
-	}
-
-	return &pb.ListProductsResponse{
-		Products: protoProducts,
-		Total:    int32(len(protoProducts)),
-		Page:     int32(page),
-		PageSize: int32(pageSize),
-		Message:  "Products found successfully",
-	}, nil
+return &pb.ListProductsResponse{
+Products: protoProducts,
+Total:    int32(len(protoProducts)),
+Message:  "Products retrieved successfully",
+}, nil
 }

@@ -1,227 +1,137 @@
 package handler
 
 import (
-	"context"
-	"fmt"
-	"time"
+"context"
+"fmt"
+"time"
 
-	"meuApp/pkg/contracts"
-	pb "meuApp/pkg/proto"
+"meuApp/internal/modules/order/domain"
+"meuApp/internal/modules/order/dto"
+"meuApp/internal/modules/order/ports"
+pb "meuApp/pkg/proto"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+"google.golang.org/grpc"
+"google.golang.org/grpc/codes"
+"google.golang.org/grpc/status"
 )
 
 // OrderGRPCHandler implements the gRPC OrderService
 type OrderGRPCHandler struct {
-	pb.UnimplementedOrderServiceServer
-	orderService contracts.OrderService
+pb.UnimplementedOrderServiceServer
+orderService ports.OrderService
 }
 
 // NewOrderGRPCHandler creates a new gRPC order handler
-func NewOrderGRPCHandler(orderService contracts.OrderService) *OrderGRPCHandler {
-	return &OrderGRPCHandler{
-		orderService: orderService,
-	}
+func NewOrderGRPCHandler(orderService ports.OrderService) *OrderGRPCHandler {
+return &OrderGRPCHandler{
+orderService: orderService,
+}
 }
 
 // RegisterWithServer registers the service with the gRPC server
 func (s *OrderGRPCHandler) RegisterWithServer(server *grpc.Server) {
-	pb.RegisterOrderServiceServer(server, s)
+pb.RegisterOrderServiceServer(server, s)
 }
 
 // CreateOrder creates a new order
 func (s *OrderGRPCHandler) CreateOrder(ctx context.Context, req *pb.CreateOrderRequest) (*pb.CreateOrderResponse, error) {
-	// Validate input
-	if req.UserId == "" {
-		return nil, status.Error(codes.InvalidArgument, "user_id is required")
-	}
+if req.UserId == "" {
+return nil, status.Error(codes.InvalidArgument, "user_id is required")
+}
 
-	var items []contracts.CreateOrderItem
-	// Create order request
-	for _, v := range req.GetItems() {
-		if v.ProductId == "" {
-			return nil, status.Error(codes.InvalidArgument, "product_id is required")
-		}
-		if v.Quantity <= 0 {
-			return nil, status.Error(codes.InvalidArgument, "quantity must be greater than 0")
-		}
-		items = append(items, contracts.CreateOrderItem{
-			ProductID: v.ProductId,
-			Quantity:  int(v.Quantity),
-		})
-	}
+var items []ports.CreateOrderItem
+for _, v := range req.GetItems() {
+if v.ProductId == "" {
+return nil, status.Error(codes.InvalidArgument, "product_id is required")
+}
+if v.Quantity <= 0 {
+return nil, status.Error(codes.InvalidArgument, "quantity must be greater than 0")
+}
+items = append(items, ports.CreateOrderItem{
+ProductID: v.ProductId,
+Quantity:  int(v.Quantity),
+})
+}
 
-	createReq := contracts.CreateOrderRequest{
-		UserID: req.UserId,
-		Items:  items,
-	}
+order, err := s.orderService.CreateOrder(ctx, req.UserId, items)
+if err != nil {
+return nil, status.Error(codes.Internal, fmt.Sprintf("failed to create order: %v", err))
+}
 
-	// Call service
-	order, err := s.orderService.CreateOrder(ctx, createReq)
-	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to create order: %v", err))
-	}
+orderResponse := dto.ToOrderResponse(order)
+protoOrder := &pb.Order{
+Id:         orderResponse.ID,
+UserId:     orderResponse.UserID,
+TotalPrice: orderResponse.Total,
+Status:     orderResponse.Status,
+CreatedAt:  orderResponse.CreatedAt.Format(time.RFC3339),
+UpdatedAt:  orderResponse.UpdatedAt.Format(time.RFC3339),
+}
 
-	// Convert to proto message
-	protoOrder := &pb.Order{
-		Id:         order.ID,
-		UserId:     order.UserID,
-		TotalPrice: order.Total,
-		Status:     string(order.Status),
-		CreatedAt:  order.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:  order.UpdatedAt.Format(time.RFC3339),
-		Items:      make([]*pb.OrderItem, 0, len(order.Items)),
-	}
+for _, item := range orderResponse.Items {
+protoOrder.Items = append(protoOrder.Items, &pb.OrderItem{
+ProductId: item.ProductID,
+Quantity:  int32(item.Quantity),
+Price:     item.Price,
+})
+}
 
-	for _, item := range order.Items {
-		protoOrder.Items = append(protoOrder.Items, &pb.OrderItem{
-			ProductId: item.ProductID,
-			Quantity:  int32(item.Quantity),
-			Price:     item.Price,
-		})
-	}
-
-	return &pb.CreateOrderResponse{
-		Order:   protoOrder,
-		Message: "Order created successfully",
-	}, nil
+return &pb.CreateOrderResponse{
+Order:   protoOrder,
+Message: "Order created successfully",
+}, nil
 }
 
 // GetOrder gets an order by ID
 func (s *OrderGRPCHandler) GetOrder(ctx context.Context, req *pb.GetOrderRequest) (*pb.GetOrderResponse, error) {
-	if req.Id == "" {
-		return nil, status.Error(codes.InvalidArgument, "id is required")
-	}
-
-	order, err := s.orderService.GetOrderByID(ctx, req.Id)
-	if err != nil {
-		return nil, status.Error(codes.NotFound, fmt.Sprintf("order not found: %v", err))
-	}
-
-	protoOrder := &pb.Order{
-		Id:         order.ID,
-		UserId:     order.UserID,
-		TotalPrice: order.Total,
-		Status:     string(order.Status),
-		CreatedAt:  order.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:  order.UpdatedAt.Format(time.RFC3339),
-		Items:      make([]*pb.OrderItem, 0, len(order.Items)),
-	}
-
-	for _, item := range order.Items {
-		protoOrder.Items = append(protoOrder.Items, &pb.OrderItem{
-			ProductId: item.ProductID,
-			Quantity:  int32(item.Quantity),
-			Price:     item.Price,
-		})
-	}
-
-	return &pb.GetOrderResponse{
-		Order:   protoOrder,
-		Message: "Order retrieved successfully",
-	}, nil
+if req.Id == "" {
+return nil, status.Error(codes.InvalidArgument, "id is required")
 }
 
-// UpdateOrderStatus updates an order status
+order, err := s.orderService.GetOrderByID(ctx, req.Id)
+if err != nil {
+return nil, status.Error(codes.NotFound, fmt.Sprintf("order not found: %v", err))
+}
+
+orderResponse := dto.ToOrderResponse(order)
+protoOrder := &pb.Order{
+Id:         orderResponse.ID,
+UserId:     orderResponse.UserID,
+TotalPrice: orderResponse.Total,
+Status:     orderResponse.Status,
+CreatedAt:  orderResponse.CreatedAt.Format(time.RFC3339),
+UpdatedAt:  orderResponse.UpdatedAt.Format(time.RFC3339),
+}
+
+for _, item := range orderResponse.Items {
+protoOrder.Items = append(protoOrder.Items, &pb.OrderItem{
+ProductId: item.ProductID,
+Quantity:  int32(item.Quantity),
+Price:     item.Price,
+})
+}
+
+return &pb.GetOrderResponse{
+Order:   protoOrder,
+Message: "Order retrieved successfully",
+}, nil
+}
+
+// UpdateOrderStatus updates order status
 func (s *OrderGRPCHandler) UpdateOrderStatus(ctx context.Context, req *pb.UpdateOrderStatusRequest) (*pb.UpdateOrderStatusResponse, error) {
-	if req.Id == "" {
-		return nil, status.Error(codes.InvalidArgument, "id is required")
-	}
-	if req.Status == "" {
-		return nil, status.Error(codes.InvalidArgument, "status is required")
-	}
-
-	err := s.orderService.UpdateOrderStatus(ctx, req.Id, contracts.OrderStatus(req.Status))
-	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to update order status: %v", err))
-	}
-
-	// Get updated order
-	order, err := s.orderService.GetOrderByID(ctx, req.Id)
-	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get updated order: %v", err))
-	}
-
-	protoOrder := &pb.Order{
-		Id:         order.ID,
-		UserId:     order.UserID,
-		TotalPrice: order.Total,
-		Status:     string(order.Status),
-		CreatedAt:  order.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:  order.UpdatedAt.Format(time.RFC3339),
-		Items:      make([]*pb.OrderItem, 0, len(order.Items)),
-	}
-
-	for _, item := range order.Items {
-		protoOrder.Items = append(protoOrder.Items, &pb.OrderItem{
-			ProductId: item.ProductID,
-			Quantity:  int32(item.Quantity),
-			Price:     item.Price,
-		})
-	}
-
-	return &pb.UpdateOrderStatusResponse{
-		Order:   protoOrder,
-		Message: "Order status updated successfully",
-	}, nil
+if req.Id == "" {
+return nil, status.Error(codes.InvalidArgument, "id is required")
 }
 
-// DeleteOrder deletes an order
-func (s *OrderGRPCHandler) DeleteOrder(ctx context.Context, req *pb.DeleteOrderRequest) (*pb.DeleteOrderResponse, error) {
-	if req.Id == "" {
-		return nil, status.Error(codes.InvalidArgument, "id is required")
-	}
-
-	err := s.orderService.CancelOrder(ctx, req.Id)
-	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to cancel order: %v", err))
-	}
-
-	return &pb.DeleteOrderResponse{
-		Message: "Order cancelled successfully",
-	}, nil
+orderStatus := domain.OrderStatus(req.Status)
+err := s.orderService.UpdateOrderStatus(ctx, req.Id, orderStatus)
+if err != nil {
+return &pb.UpdateOrderStatusResponse{
+Message: fmt.Sprintf("failed to update order status: %v", err),
+}, nil
 }
 
-// GetOrdersByUser gets orders by user ID
-func (s *OrderGRPCHandler) GetOrdersByUser(ctx context.Context, req *pb.GetOrdersByUserRequest) (*pb.ListOrdersResponse, error) {
-	if req.UserId == "" {
-		return nil, status.Error(codes.InvalidArgument, "user_id is required")
-	}
-
-	orders, err := s.orderService.GetOrdersByUserID(ctx, req.UserId)
-	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get user orders: %v", err))
-	}
-
-	var protoOrders []*pb.Order
-	for _, order := range orders {
-
-		protoOrders = append(protoOrders, &pb.Order{
-			Id:         order.ID,
-			UserId:     order.UserID,
-			TotalPrice: order.Total,
-			Status:     string(order.Status),
-			CreatedAt:  order.CreatedAt.Format(time.RFC3339),
-			UpdatedAt:  order.UpdatedAt.Format(time.RFC3339),
-			Items:      make([]*pb.OrderItem, 0, len(order.Items)),
-		})
-
-		for _, item := range order.Items {
-			protoOrders[len(protoOrders)-1].Items = append(protoOrders[len(protoOrders)-1].Items, &pb.OrderItem{
-				ProductId: item.ProductID,
-				Quantity:  int32(item.Quantity),
-				Price:     item.Price,
-			})
-		}
-	}
-
-	return &pb.ListOrdersResponse{
-		Orders:   protoOrders,
-		Total:    int32(len(protoOrders)),
-		Page:     req.Page,
-		PageSize: req.PageSize,
-		Message:  "User orders retrieved successfully",
-	}, nil
+return &pb.UpdateOrderStatusResponse{
+Message: "Order status updated successfully",
+}, nil
 }
