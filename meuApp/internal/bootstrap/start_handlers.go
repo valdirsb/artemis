@@ -4,8 +4,11 @@ import (
 	"context"
 	"log"
 	orderHandler "meuApp/internal/modules/order/handler"
+	orderPorts "meuApp/internal/modules/order/ports"
 	productHandler "meuApp/internal/modules/product/handler"
+	productPorts "meuApp/internal/modules/product/ports"
 	userHandler "meuApp/internal/modules/user/handler"
+	userPorts "meuApp/internal/modules/user/ports"
 	"meuApp/pkg/container"
 	"meuApp/pkg/contracts"
 	"meuApp/pkg/framework"
@@ -18,21 +21,21 @@ func registerModuleHandlers(c *container.Container, fw *framework.Framework) {
 
 	if framework.IsEnabled("modules", "user") {
 		c.RegisterSingleton("userHandler", func() interface{} {
-			userService := c.MustGet("userService").(contracts.UserService)
+			userService := c.MustGet("userService").(userPorts.UserService)
 			return userHandler.NewUserHandler(userService)
 		})
 	}
 
 	if framework.IsEnabled("modules", "product") {
 		c.RegisterSingleton("productHandler", func() interface{} {
-			productSvc := c.MustGet("productService").(contracts.ProductService)
+			productSvc := c.MustGet("productService").(productPorts.ProductService)
 			return productHandler.NewProductHandler(productSvc)
 		})
 	}
 
 	if framework.IsEnabled("modules", "order") {
 		c.RegisterSingleton("orderHandler", func() interface{} {
-			orderSvc := c.MustGet("orderService").(contracts.OrderService)
+			orderSvc := c.MustGet("orderService").(orderPorts.OrderService)
 			return orderHandler.NewOrderHandler(orderSvc)
 		})
 	}

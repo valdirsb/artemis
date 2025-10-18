@@ -3,35 +3,38 @@ package handler
 import (
 	"net/http"
 
-	"meuApp/pkg/contracts"
+	"meuApp/internal/modules/user/dto"
+	"meuApp/internal/modules/user/ports"
 
 	"github.com/gin-gonic/gin"
 )
 
 type UserHandler struct {
-	userService contracts.UserService
+	userService ports.UserService
 }
 
-func NewUserHandler(userService contracts.UserService) *UserHandler {
+func NewUserHandler(userService ports.UserService) *UserHandler {
 	return &UserHandler{userService: userService}
 }
 
 func (h *UserHandler) CreateUser(c *gin.Context) {
 
-	var user contracts.CreateUserRequest
+	var req dto.CreateUserRequest
 
-	if err := c.ShouldBindJSON(&user); err != nil {
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	createdUser, err := h.userService.CreateUser(c.Request.Context(), user)
+	createdUser, err := h.userService.CreateUser(c.Request.Context(), req.Username, req.Email, req.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, createdUser)
+	// Converter domain para DTO response
+	response := dto.ToUserResponse(createdUser)
+	c.JSON(http.StatusCreated, response)
 }
 
 func (h *UserHandler) GetUser(c *gin.Context) {
@@ -42,24 +45,28 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
+	// Converter domain para DTO response
+	response := dto.ToUserResponse(user)
+	c.JSON(http.StatusOK, response)
 }
 
 func (h *UserHandler) UpdateUser(c *gin.Context) {
 	id := c.Param("id")
-	var user contracts.UpdateUserRequest
-	if err := c.ShouldBindJSON(&user); err != nil {
+	var req dto.UpdateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	updatedUser, err := h.userService.UpdateUser(c.Request.Context(), id, user)
+	updatedUser, err := h.userService.UpdateUser(c.Request.Context(), id, req.Username, req.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, updatedUser)
+	// Converter domain para DTO response
+	response := dto.ToUserResponse(updatedUser)
+	c.JSON(http.StatusOK, response)
 }
 
 func (h *UserHandler) DeleteUser(c *gin.Context) {
@@ -74,21 +81,20 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 
 func (h *UserHandler) ValidateUser(c *gin.Context) {
 
-	var req struct {
-		Email    string `json:"email" binding:"required"`
-		Password string `json:"password" binding:"required"`
-	}
+	var req dto.LoginRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	user, err := h.userService.ValidateUser(c.Request.Context(), req.Email, req.Password)
+	user, err := h.userService.ValidateCredentials(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
+	// Converter domain para DTO response
+	response := dto.ToUserResponse(user)
+	c.JSON(http.StatusOK, response)
 }
