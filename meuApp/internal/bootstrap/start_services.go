@@ -1,7 +1,8 @@
 package bootstrap
 
 import (
-	orderService "meuApp/internal/modules/order/service"
+	// orderService "meuApp/internal/modules/order/service" // TODO: Refatorar Order module
+	productPorts "meuApp/internal/modules/product/ports"
 	productService "meuApp/internal/modules/product/service"
 	userPorts "meuApp/internal/modules/user/ports"
 	userService "meuApp/internal/modules/user/service"
@@ -21,13 +22,16 @@ func (s *Bootstrap) StartServices() {
 	s.Services["userService"] = userService.NewUserService(userRepo, passwordHasher, emailService, tokenGenerator, eventPublisher, logger)
 
 	// Product
-	productRepo := s.container.MustGet("productRepository").(contracts.ProductRepository)
+	productRepo := s.container.MustGet("productRepository").(productPorts.ProductRepository)
 	s.Services["productService"] = productService.NewProductService(productRepo, eventPublisher)
 
 	// Order
+	// TODO: Refatorar Order service para usar ports dos módulos
 	orderRepo := s.container.MustGet("orderRepository").(contracts.OrderRepository)
-	productSvc := s.Services["productService"].(contracts.ProductService)
-	userSvc := s.Services["userService"].(contracts.UserService)
-	s.Services["orderService"] = orderService.NewOrderService(orderRepo, productSvc, userSvc, eventPublisher)
+	// productSvc := s.Services["productService"].(productPorts.ProductService)
+	// userSvc := s.Services["userService"].(userPorts.UserService)
+	// Temporariamente desabilitado até refatorar Order module
+	_ = orderRepo
+	// s.Services["orderService"] = orderService.NewOrderService(orderRepo, productSvc, userSvc, eventPublisher)
 
 }

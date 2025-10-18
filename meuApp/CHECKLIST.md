@@ -1,6 +1,6 @@
 # ✅ Checklist de Refatoração - Vista Rápida
 
-> **Progresso Geral:** 28% (24/85 tarefas)
+> **Progresso Geral:** 38% (35/92 tarefas)
 
 ## 🔴 ALTA PRIORIDADE
 
@@ -33,10 +33,34 @@
   - [x] Testar compilação
   - [x] Testar aplicação
 
-### 🔧 Fase 2: Interfaces e Contratos (0/15)
-- [ ] 2.1 Remover duplicação de interfaces (0/8)
-- [ ] 2.2 Reorganizar DTOs (0/10)
-- [ ] 2.3 Remover dependências de framework (0/5)
+### 🔧 Fase 2: Interfaces e Contratos (11/23) ⏳
+- [x] 2.1 Módulo User - Refatoração Completa (7/7) ✅
+  - [x] Criar domain.User independente
+  - [x] Criar ports.go com interfaces (Primary + Secondary)
+  - [x] Criar dto/ (requests, responses, mapper)
+  - [x] Atualizar repository para usar domain.User
+  - [x] Atualizar service para usar domain.User
+  - [x] Atualizar bootstrap para usar ports do módulo
+  - [x] Testar compilação
+- [ ] 2.2 Módulo Product - Refatoração (4/7) ⏳
+  - [x] Criar domain.Product independente
+  - [x] Criar ports.go com interfaces
+  - [x] Criar dto/ (requests, responses, mapper)
+  - [x] Atualizar repository para usar domain.Product
+  - [ ] Atualizar service para usar domain.Product
+  - [ ] Atualizar bootstrap
+  - [ ] Testar compilação
+- [ ] 2.3 Módulo Order - Refatoração (0/7)
+  - [ ] Criar domain.Order independente
+  - [ ] Criar ports.go com interfaces
+  - [ ] Criar dto/ (requests, responses, mapper)
+  - [ ] Atualizar repository
+  - [ ] Atualizar service
+  - [ ] Atualizar bootstrap
+  - [ ] Testar compilação
+- [ ] 2.4 Atualizar Handlers (0/2)
+  - [ ] Atualizar handlers para usar DTOs dos módulos
+  - [ ] Remover dependências de pkg/contracts nos handlers
 
 ---
 

@@ -6,22 +6,23 @@ import (
 	"time"
 
 	"meuApp/internal/modules/product/domain"
+	"meuApp/internal/modules/product/ports"
 	"meuApp/pkg/contracts"
 
 	"github.com/google/uuid"
 )
 
-// ProductService implementa a interface contracts.ProductService
+// ProductService implementa a interface ports.ProductService
 type ProductService struct {
-	repo           contracts.ProductRepository
+	repo           ports.ProductRepository
 	eventPublisher contracts.EventPublisher
 }
 
 // NewProductService cria uma nova instância do ProductService
 func NewProductService(
-	repo contracts.ProductRepository,
+	repo ports.ProductRepository,
 	eventPublisher contracts.EventPublisher,
-) contracts.ProductService {
+) ports.ProductService {
 	return &ProductService{
 		repo:           repo,
 		eventPublisher: eventPublisher,
@@ -29,21 +30,18 @@ func NewProductService(
 }
 
 // CreateProduct cria um novo produto
-func (s *ProductService) CreateProduct(ctx context.Context, req contracts.CreateProductRequest) (*contracts.Product, error) {
-	// Criar aggregate de domínio para validações
-	aggregate, err := domain.NewProductAggregateFromRequest(req)
+func (s *ProductService) CreateProduct(ctx context.Context, name, description, categoryID string, price float64, stock int) (*domain.Product, error) {
+	// Gerar ID único
+	productID := uuid.New().String()
+
+	// Criar produto com validações de domínio
+	product, err := domain.NewProduct(productID, name, description, categoryID, price, stock)
 	if err != nil {
 		return nil, fmt.Errorf("invalid product data: %w", err)
 	}
 
-	// Gerar ID único
-	productID := uuid.New().String()
-	product := aggregate.GetProduct()
-	product.ID = productID
-
 	// Salvar no banco de dados
-	contractProduct := &product.Product
-	if err := s.repo.Create(ctx, contractProduct); err != nil {
+	if err := s.repo.Create(ctx, product); err != nil {
 		return nil, fmt.Errorf("failed to create product: %w", err)
 	}
 
@@ -52,7 +50,7 @@ func (s *ProductService) CreateProduct(ctx context.Context, req contracts.Create
 		Type:      "ProductCreatedEventType",
 		Timestamp: time.Now(),
 		Payload: contracts.ProductCreatedEvent{
-			ProductID:  productID,
+			ProductID:  product.ID,
 			Name:       product.Name,
 			CategoryID: product.CategoryID,
 			Price:      product.Price,
@@ -62,11 +60,11 @@ func (s *ProductService) CreateProduct(ctx context.Context, req contracts.Create
 	// Ignorar erros de evento para não falhar a operação
 	_ = s.eventPublisher.Publish(ctx, event)
 
-	return contractProduct, nil
+	return product, nil
 }
 
 // GetProductByID busca um produto por ID
-func (s *ProductService) GetProductByID(ctx context.Context, id string) (*contracts.Product, error) {
+func (s *ProductService) GetProductByID(ctx context.Context, id string) (*domain.Product, error) {
 	product, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get product: %w", err)
@@ -76,7 +74,7 @@ func (s *ProductService) GetProductByID(ctx context.Context, id string) (*contra
 }
 
 // UpdateProduct atualiza um produto existente
-func (s *ProductService) UpdateProduct(ctx context.Context, id string, req contracts.UpdateProductRequest) (*contracts.Product, error) {
+func (s *ProductService) UpdateProduct(ctx context.Context, id string, name, description, categoryID *string, price *float64, stock *int) (*domain.Product, error) {
 	// Buscar produto existente
 	existingProduct, err := s.repo.GetByID(ctx, id)
 	if err != nil {
@@ -84,36 +82,38 @@ func (s *ProductService) UpdateProduct(ctx context.Context, id string, req contr
 	}
 
 	// Criar aggregate para validações e atualizações
-	domainProduct := &domain.Product{Product: *existingProduct}
-	aggregate := domain.NewProductAggregate(domainProduct)
+	aggregate := domain.NewProductAggregate(existingProduct)
 
 	// Aplicar atualizações
-	if req.Name != nil {
-		if err := aggregate.UpdateName(*req.Name); err != nil {
+	if name != nil {
+		if err := aggregate.UpdateName(*name); err != nil {
 			return nil, fmt.Errorf("invalid name: %w", err)
 		}
 	}
 
-	if req.Description != nil {
-		if err := aggregate.UpdateDescription(*req.Description); err != nil {
+	if description != nil {
+		if err := aggregate.UpdateDescription(*description); err != nil {
 			return nil, fmt.Errorf("invalid description: %w", err)
 		}
 	}
 
-	if req.Price != nil {
-		if err := aggregate.UpdatePrice(*req.Price); err != nil {
+	// CategoryID não pode ser atualizado (imutável por regra de negócio)
+	// Se precisar mudar categoria, deve-se criar um novo produto
+
+	if price != nil {
+		if err := aggregate.UpdatePrice(*price); err != nil {
 			return nil, fmt.Errorf("invalid price: %w", err)
 		}
 	}
 
-	if req.Stock != nil {
-		if err := aggregate.UpdateStock(*req.Stock); err != nil {
+	if stock != nil {
+		if err := aggregate.UpdateStock(*stock); err != nil {
 			return nil, fmt.Errorf("invalid stock: %w", err)
 		}
 	}
 
 	// Salvar alterações
-	updatedProduct := &aggregate.GetProduct().Product
+	updatedProduct := aggregate.GetProduct()
 	if err := s.repo.Update(ctx, updatedProduct); err != nil {
 		return nil, fmt.Errorf("failed to update product: %w", err)
 	}
@@ -130,8 +130,8 @@ func (s *ProductService) DeleteProduct(ctx context.Context, id string) error {
 	return nil
 }
 
-// GetProducts lista produtos com filtros
-func (s *ProductService) GetProducts(ctx context.Context, filters contracts.ProductFilters) ([]*contracts.Product, error) {
+// ListProducts lista produtos com filtros
+func (s *ProductService) ListProducts(ctx context.Context, filters ports.ProductFilters) ([]*domain.Product, error) {
 	products, err := s.repo.List(ctx, filters)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get products: %w", err)
@@ -149,15 +149,14 @@ func (s *ProductService) UpdateStock(ctx context.Context, id string, quantity in
 	}
 
 	// Criar aggregate e atualizar estoque
-	domainProduct := &domain.Product{Product: *existingProduct}
-	aggregate := domain.NewProductAggregate(domainProduct)
+	aggregate := domain.NewProductAggregate(existingProduct)
 
 	if err := aggregate.UpdateStock(quantity); err != nil {
 		return fmt.Errorf("failed to update stock: %w", err)
 	}
 
 	// Salvar alterações
-	updatedProduct := &aggregate.GetProduct().Product
+	updatedProduct := aggregate.GetProduct()
 	if err := s.repo.Update(ctx, updatedProduct); err != nil {
 		return fmt.Errorf("failed to update product stock: %w", err)
 	}
