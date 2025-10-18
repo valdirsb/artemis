@@ -5,7 +5,8 @@ import (
 	"log"
 	orderHandler "meuApp/internal/modules/order/handler"
 	orderPorts "meuApp/internal/modules/order/ports"
-	productHandler "meuApp/internal/modules/product/handler"
+	productGRPC "meuApp/internal/modules/product/adapters/grpc"
+	productHTTP "meuApp/internal/modules/product/adapters/http"
 	productPorts "meuApp/internal/modules/product/ports"
 	userGRPC "meuApp/internal/modules/user/adapters/grpc"
 	userHTTP "meuApp/internal/modules/user/adapters/http"
@@ -21,15 +22,17 @@ func registerModuleHandlers(c *container.Container, fw *framework.Framework) {
 
 	if framework.IsEnabled("modules", "user") {
 		c.RegisterSingleton("userHandler", func() interface{} {
-			userService := c.MustGet("userService").(userPorts.UserService)
-			return userHTTP.NewUserHTTPHandler(userService)
+			// Usar Application Service em vez do Service tradicional
+			userAppService := c.MustGet("userApplicationService").(userPorts.UserService)
+			return userHTTP.NewUserHTTPHandler(userAppService)
 		})
 	}
 
 	if framework.IsEnabled("modules", "product") {
 		c.RegisterSingleton("productHandler", func() interface{} {
-			productSvc := c.MustGet("productService").(productPorts.ProductService)
-			return productHandler.NewProductHandler(productSvc)
+			// Usar Application Service em vez do Service tradicional
+			productAppService := c.MustGet("productApplicationService").(productPorts.ProductService)
+			return productHTTP.NewProductHandler(productAppService)
 		})
 	}
 
@@ -58,17 +61,19 @@ func registerGRPCServices(c *container.Container, fw *framework.Framework) {
 
 	// Register User gRPC Service
 	if framework.IsEnabled("modules", "user") {
-		userSvc := c.MustGet("userService").(userPorts.UserService)
+		// Usar Application Service em vez do Service tradicional
+		userAppSvc := c.MustGet("userApplicationService").(userPorts.UserService)
 		userRepo := c.MustGet("userRepository").(userPorts.UserRepository)
-		userGRPCService := userGRPC.NewUserGRPCHandler(userSvc, userRepo)
+		userGRPCService := userGRPC.NewUserGRPCHandler(userAppSvc, userRepo)
 		grpcProvider.RegisterService(userGRPCService)
 		log.Printf("✅ User gRPC service registered")
 	}
 
 	// Register Product gRPC Service
 	if framework.IsEnabled("modules", "product") {
-		productSvc := c.MustGet("productService").(productPorts.ProductService)
-		productGRPCService := productHandler.NewGRPCHandler(productSvc)
+		// Usar Application Service em vez do Service tradicional
+		productAppSvc := c.MustGet("productApplicationService").(productPorts.ProductService)
+		productGRPCService := productGRPC.NewGRPCHandler(productAppSvc)
 		grpcProvider.RegisterService(productGRPCService)
 		log.Printf("✅ Product gRPC service registered")
 	}

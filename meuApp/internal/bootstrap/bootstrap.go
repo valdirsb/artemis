@@ -164,4 +164,13 @@ func registerServices(c *container.Container) {
 			return service
 		})
 	}
+
+	// Register Application Services (CQRS)
+	start.StartApplicationServices()
+
+	for name, service := range start.Services {
+		c.RegisterSingleton(name, func() interface{} {
+			return service
+		})
+	}
 }

@@ -1,6 +1,6 @@
 # ✅ Checklist de Refatoração - Vista Rápida
 
-> **Progresso Geral:** 60% (57/94 tarefas)
+> **Progresso Geral:** 71% (67/94 tarefas)
 
 ## 🔴 ALTA PRIORIDADE
 
@@ -66,8 +66,8 @@
 
 ## 🟡 MÉDIA PRIORIDADE
 
-### 🏗️ Fase 3: Camada de Application (7/21) 🔄
-- [x] 3.1 User Module - Use Cases (7/12) ✅
+### 🏗️ Fase 3: Camada de Application (17/21) 🔄
+- [x] 3.1 User Module - Use Cases (10/12) ✅
   - [x] Criar estrutura de diretórios (application/commands, queries, services)
   - [x] Criar Command: CreateUser
   - [x] Criar Command: UpdateUser
@@ -75,12 +75,19 @@
   - [x] Criar Query: GetUser
   - [x] Criar Query: ListUsers
   - [x] Criar UserApplicationService
-  - [ ] Reorganizar adapters (HTTP, gRPC, Repository)
-  - [ ] Atualizar bootstrap para injetar handlers
-  - [ ] Integrar Application Service com handlers
-  - [ ] Remover service antigo
-  - [ ] Testar módulo completo
-- [ ] 3.2 Product Module - Use Cases (0/7)
+  - [x] Reorganizar adapters (HTTP, gRPC, Repository)
+  - [x] Atualizar bootstrap para injetar handlers
+  - [x] Integrar Application Service com handlers HTTP/gRPC
+  - [ ] Adicionar testes unitários
+  - [ ] Remover service antigo (opcional)
+- [x] 3.2 Product Module - Use Cases (7/7) ✅
+  - [x] Criar estrutura de diretórios
+  - [x] Criar Commands: CreateProduct, UpdateProduct, DeleteProduct, UpdateStock
+  - [x] Criar Queries: GetProduct, ListProducts
+  - [x] Criar ProductApplicationService
+  - [x] Reorganizar adapters (HTTP, gRPC, Repository)
+  - [x] Atualizar bootstrap
+  - [x] Integrar Application Service com handlers
 - [ ] 3.3 Order Module - Use Cases (0/7)
 
 ### ⚠️ Fase 4: Sistema de Erros (0/15)
