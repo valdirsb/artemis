@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"meuApp/internal/modules/user/adapters/repository"
 	"meuApp/internal/modules/user/domain"
+	"meuApp/internal/modules/user/repository"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

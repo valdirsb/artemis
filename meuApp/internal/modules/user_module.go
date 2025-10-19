@@ -6,10 +6,10 @@ import (
 	"meuApp/internal/modules/user/adapters"
 	"meuApp/internal/modules/user/adapters/grpc"
 	"meuApp/internal/modules/user/adapters/http"
-	"meuApp/internal/modules/user/adapters/repository"
 	"meuApp/internal/modules/user/application/commands"
 	"meuApp/internal/modules/user/application/queries"
 	"meuApp/internal/modules/user/application/services"
+	"meuApp/internal/modules/user/repository"
 	"meuApp/pkg/container"
 	"meuApp/pkg/events"
 
