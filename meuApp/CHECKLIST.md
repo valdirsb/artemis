@@ -328,7 +328,7 @@ Semana 6: Fase 6 (Auto-registro) + Revisão
 
 ## 🔗 Links Úteis
 
-- [Plano Detalhado](./REFACTORING_PLAN.md)
-- [Documentação de Arquitetura](./ARCHITECTURE.md) (criar)
+- [Plano Detalhado](./docs/archive//REFACTORING_PLAN.md)
+- [Documentação de Arquitetura](./docs/ARCHITECTURE.md)
 - [Guia de Contribuição](./CONTRIBUTING.md) (criar)
 

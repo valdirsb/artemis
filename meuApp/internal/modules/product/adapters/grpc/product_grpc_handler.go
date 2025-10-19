@@ -14,26 +14,26 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// GRPCHandler implements the gRPC ProductService
-type GRPCHandler struct {
+// ProductGRPCHandler implements the gRPC ProductService
+type ProductGRPCHandler struct {
 	pb.UnimplementedProductServiceServer
 	productService ports.ProductService
 }
 
 // NewGRPCHandler creates a new gRPC product service
-func NewGRPCHandler(productService ports.ProductService) *GRPCHandler {
-	return &GRPCHandler{
+func NewGRPCHandler(productService ports.ProductService) *ProductGRPCHandler {
+	return &ProductGRPCHandler{
 		productService: productService,
 	}
 }
 
 // RegisterWithServer registers the service with the gRPC server
-func (s *GRPCHandler) RegisterWithServer(server *grpc.Server) {
+func (s *ProductGRPCHandler) RegisterWithServer(server *grpc.Server) {
 	pb.RegisterProductServiceServer(server, s)
 }
 
 // CreateProduct creates a new product
-func (s *GRPCHandler) CreateProduct(ctx context.Context, req *pb.CreateProductRequest) (*pb.CreateProductResponse, error) {
+func (s *ProductGRPCHandler) CreateProduct(ctx context.Context, req *pb.CreateProductRequest) (*pb.CreateProductResponse, error) {
 	if req.Name == "" {
 		return nil, status.Error(codes.InvalidArgument, "name is required")
 	}
@@ -64,7 +64,7 @@ func (s *GRPCHandler) CreateProduct(ctx context.Context, req *pb.CreateProductRe
 }
 
 // GetProduct gets a product by ID
-func (s *GRPCHandler) GetProduct(ctx context.Context, req *pb.GetProductRequest) (*pb.GetProductResponse, error) {
+func (s *ProductGRPCHandler) GetProduct(ctx context.Context, req *pb.GetProductRequest) (*pb.GetProductResponse, error) {
 	if req.Id == "" {
 		return nil, status.Error(codes.InvalidArgument, "id is required")
 	}
@@ -92,7 +92,7 @@ func (s *GRPCHandler) GetProduct(ctx context.Context, req *pb.GetProductRequest)
 }
 
 // UpdateProduct updates a product
-func (s *GRPCHandler) UpdateProduct(ctx context.Context, req *pb.UpdateProductRequest) (*pb.UpdateProductResponse, error) {
+func (s *ProductGRPCHandler) UpdateProduct(ctx context.Context, req *pb.UpdateProductRequest) (*pb.UpdateProductResponse, error) {
 	if req.Id == "" {
 		return nil, status.Error(codes.InvalidArgument, "id is required")
 	}
@@ -126,7 +126,7 @@ func (s *GRPCHandler) UpdateProduct(ctx context.Context, req *pb.UpdateProductRe
 }
 
 // DeleteProduct deletes a product
-func (s *GRPCHandler) DeleteProduct(ctx context.Context, req *pb.DeleteProductRequest) (*pb.DeleteProductResponse, error) {
+func (s *ProductGRPCHandler) DeleteProduct(ctx context.Context, req *pb.DeleteProductRequest) (*pb.DeleteProductResponse, error) {
 	if req.Id == "" {
 		return nil, status.Error(codes.InvalidArgument, "id is required")
 	}
@@ -143,7 +143,7 @@ func (s *GRPCHandler) DeleteProduct(ctx context.Context, req *pb.DeleteProductRe
 }
 
 // ListProducts lists products (simplified - no filters)
-func (s *GRPCHandler) ListProducts(ctx context.Context, req *pb.ListProductsRequest) (*pb.ListProductsResponse, error) {
+func (s *ProductGRPCHandler) ListProducts(ctx context.Context, req *pb.ListProductsRequest) (*pb.ListProductsResponse, error) {
 	filters := ports.ProductFilters{}
 	products, err := s.productService.ListProducts(ctx, filters)
 	if err != nil {

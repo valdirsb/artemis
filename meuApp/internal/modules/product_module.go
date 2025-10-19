@@ -99,7 +99,7 @@ func (a *productHTTPHandlerAdapter) RegisterRoutes(router *gin.RouterGroup) {
 
 // productGRPCServiceAdapter adapta o gRPC handler para a interface do registry
 type productGRPCServiceAdapter struct {
-	handler *grpc.GRPCHandler
+	handler *grpc.ProductGRPCHandler
 }
 
 func (a *productGRPCServiceAdapter) RegisterService(server *grpclib.Server) {
