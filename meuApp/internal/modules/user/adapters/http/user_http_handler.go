@@ -21,7 +21,18 @@ func NewUserHTTPHandler(userService ports.UserService) *UserHTTPHandler {
 	return &UserHTTPHandler{userService: userService}
 }
 
-// CreateUser é o endpoint HTTP para criação de usuário
+// CreateUser godoc
+// @Summary Create a new user
+// @Description Create a new user with username, email and password
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param user body dto.CreateUserRequest true "User data"
+// @Success 201 {object} dto.UserResponse
+// @Failure 400 {object} map[string]string "Invalid request"
+// @Failure 409 {object} map[string]string "User already exists"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /api/v1/users [post]
 func (h *UserHTTPHandler) CreateUser(c *gin.Context) {
 	var req dto.CreateUserRequest
 
@@ -41,7 +52,17 @@ func (h *UserHTTPHandler) CreateUser(c *gin.Context) {
 	middleware.RespondWithJSON(c.Writer, http.StatusCreated, response)
 }
 
-// GetUser é o endpoint HTTP para buscar usuário por ID
+// GetUser godoc
+// @Summary Get user by ID
+// @Description Get a user by their unique identifier
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 200 {object} dto.UserResponse
+// @Failure 404 {object} map[string]string "User not found"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /api/v1/users/{id} [get]
 func (h *UserHTTPHandler) GetUser(c *gin.Context) {
 	id := c.Param("id")
 	user, err := h.userService.GetUserByID(c.Request.Context(), id)
@@ -55,7 +76,19 @@ func (h *UserHTTPHandler) GetUser(c *gin.Context) {
 	middleware.RespondWithJSON(c.Writer, http.StatusOK, response)
 }
 
-// UpdateUser é o endpoint HTTP para atualizar usuário
+// UpdateUser godoc
+// @Summary Update user
+// @Description Update user information (username and email)
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Param user body dto.UpdateUserRequest true "User data"
+// @Success 200 {object} dto.UserResponse
+// @Failure 400 {object} map[string]string "Invalid request"
+// @Failure 404 {object} map[string]string "User not found"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /api/v1/users/{id} [put]
 func (h *UserHTTPHandler) UpdateUser(c *gin.Context) {
 	id := c.Param("id")
 	var req dto.UpdateUserRequest
@@ -75,7 +108,17 @@ func (h *UserHTTPHandler) UpdateUser(c *gin.Context) {
 	middleware.RespondWithJSON(c.Writer, http.StatusOK, response)
 }
 
-// DeleteUser é o endpoint HTTP para deletar usuário
+// DeleteUser godoc
+// @Summary Delete user
+// @Description Delete a user by their ID
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 204 "No Content"
+// @Failure 404 {object} map[string]string "User not found"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /api/v1/users/{id} [delete]
 func (h *UserHTTPHandler) DeleteUser(c *gin.Context) {
 	id := c.Param("id")
 	if err := h.userService.DeleteUser(c.Request.Context(), id); err != nil {
@@ -86,7 +129,18 @@ func (h *UserHTTPHandler) DeleteUser(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// ValidateUser é o endpoint HTTP para validar credenciais
+// ValidateUser godoc
+// @Summary Validate user credentials
+// @Description Validate user email and password for authentication
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param credentials body dto.LoginRequest true "Login credentials"
+// @Success 200 {object} dto.UserResponse
+// @Failure 400 {object} map[string]string "Invalid request"
+// @Failure 401 {object} map[string]string "Invalid credentials"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /api/v1/users/validate [post]
 func (h *UserHTTPHandler) ValidateUser(c *gin.Context) {
 	var req dto.LoginRequest
 

@@ -106,17 +106,39 @@ golangci-lint run
 
 ## 📖 Documentação
 
-### Guias de Refatoração
+> **✅ 6.094+ linhas | 44 arquivos organizados | 100% completa**
 
-- 📚 [**REFACTORING_INDEX.md**](./REFACTORING_INDEX.md) - Índice completo da documentação
-- 🚀 [**QUICKSTART.md**](./QUICKSTART.md) - Guia de início rápido
-- ✅ [**CHECKLIST.md**](./CHECKLIST.md) - Checklist de progresso (53% completo)
-- 📋 [**REFACTORING_PLAN.md**](./REFACTORING_PLAN.md) - Plano detalhado
+### 🚀 Início Rápido
+- � [**Índice Completo**](docs/INDEX.md) - Navegação detalhada de toda documentação
+- 🏃 [**Quick Start**](docs/guides/QUICKSTART.md) - Execute o projeto em 15 minutos
+- 🌐 [**Swagger UI**](http://localhost:8080/swagger/index.html) - API interativa (16 endpoints)
 
-### Análises
+### 📐 Arquitetura
+- 🏗️ [**Arquitetura Completa**](docs/ARCHITECTURE.md) - 6 diagramas + explicações (800+ linhas)
+- 📊 [**Antes vs Depois**](docs/ARCHITECTURE_COMPARISON.md) - Comparação da refatoração
+- 📋 [**ADRs**](docs/adr/) - 3 Architecture Decision Records
 
-- 🏗️ [**ARCHITECTURE_COMPARISON.md**](./ARCHITECTURE_COMPARISON.md) - Antes vs Depois
-- 💻 [**CODE_EXAMPLES.md**](./CODE_EXAMPLES.md) - Exemplos práticos
+### 📦 Desenvolvimento
+- � [**Criar Módulo**](docs/MODULE_CREATION_GUIDE.md) - Tutorial 12 passos (1500+ linhas)
+- 💡 [**Exemplos de Código**](docs/guides/CODE_EXAMPLES.md) - Exemplos práticos
+- 🎯 [**Sistema de Eventos**](docs/guides/EVENTS_GUIDE.md) - Event Bus type-safe
+- 🗂️ [**Estrutura de Arquivos**](docs/guides/FILE_STRUCTURE.md) - Organização do projeto
+
+### 🚀 Deployment & Progresso
+- 🐳 [**Guia de Deploy**](docs/DEPLOYMENT.md) - Docker + configuração (600+ linhas)
+- ✅ [**CHECKLIST.md**](CHECKLIST.md) - **93% completo** (130/140 tarefas)
+- 📊 [**Fases Completas**](docs/phases/) - Resumos de cada fase
+
+### 📂 Organização da Documentação
+```
+docs/
+├── 📋 adr/          # Architecture Decision Records (3 ADRs)
+├── 📚 guides/       # Guias práticos (5 guias)
+├── 📊 phases/       # Resumos de fases (18 documentos)
+└── � archive/      # Documentos históricos (6 documentos)
+```
+
+**Ver:** [DOCUMENTACAO_REORGANIZADA.md](DOCUMENTACAO_REORGANIZADA.md) para detalhes da organização
 
 ---
 

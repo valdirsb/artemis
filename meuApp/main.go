@@ -13,7 +13,36 @@ import (
 	"meuApp/pkg/config"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
+	_ "meuApp/docs" // Importar docs gerados pelo swag
 )
+
+// @title Artemis API
+// @version 1.0
+// @description API for Artemis - Clean Architecture Framework in Go
+// @description Modular framework with Clean Architecture, Hexagonal Architecture, DDD and CQRS patterns
+
+// @contact.name API Support
+// @contact.email support@artemis.dev
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
+// @host localhost:8080
+// @BasePath /
+
+// @schemes http https
+
+// @tag.name users
+// @tag.description User management endpoints
+
+// @tag.name products
+// @tag.description Product management endpoints
+
+// @tag.name orders
+// @tag.description Order management endpoints
 
 func main() {
 	log.Println("🚀 Starting meuApp with ModuleRegistry...")
@@ -61,6 +90,10 @@ func main() {
 			"modules":   registry.Stats(),
 		})
 	})
+
+	// Swagger documentation endpoint
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	log.Println("📚 Swagger UI available at http://localhost:8080/swagger/index.html")
 
 	// Register all module routes from registry
 	api := router.Group("/api/v1")
