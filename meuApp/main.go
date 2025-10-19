@@ -10,21 +10,22 @@ import (
 	"time"
 
 	"meuApp/internal/bootstrap"
-	"meuApp/internal/routes"
 	"meuApp/pkg/config"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
+	log.Println("🚀 Starting meuApp with ModuleRegistry...")
+
 	// Load application config
 	appConfig, err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("Failed to load application config: %v", err)
 	}
 
-	// Bootstrap application with framework integration
-	container, framework, err := bootstrap.FrameworkBootstrap("framework.yaml")
+	// Bootstrap application with ModuleRegistry
+	_, registry, framework, err := bootstrap.FrameworkBootstrapWithRegistry("framework.yaml")
 	if err != nil {
 		log.Fatalf("Failed to bootstrap application: %v", err)
 	}
@@ -33,7 +34,7 @@ func main() {
 	router := gin.New()
 	router.Use(gin.Logger(), gin.Recovery())
 
-	// Health check endpoint (always available)
+	// Health check endpoint
 	router.GET("/health", func(c *gin.Context) {
 		ctx := c.Request.Context()
 		healthResults := framework.HealthCheck(ctx)
@@ -49,7 +50,7 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{
 			"status":   status,
 			"services": healthResults,
-			"features": framework.ListEnabledFeatures(),
+			"registry": registry.Stats(),
 		})
 	})
 
@@ -57,13 +58,14 @@ func main() {
 	router.GET("/framework/info", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"framework": framework.GetConfig().Framework,
-			"features":  framework.ListEnabledFeatures(),
+			"modules":   registry.Stats(),
 		})
 	})
 
-	// Register module routes conditionally
-
-	routes.RegisterRoutes(router, container, framework.ListEnabledFeatures()["modules"])
+	// Register all module routes from registry
+	api := router.Group("/api/v1")
+	registry.RegisterHTTPRoutes(api)
+	log.Println("✅ All HTTP routes registered from ModuleRegistry")
 
 	// Start HTTP server
 	srv := &http.Server{
@@ -73,9 +75,9 @@ func main() {
 
 	// Start server in goroutine
 	go func() {
-		log.Printf("Server starting on port %s", appConfig.Port)
-		log.Printf("Framework: %s v%s", framework.GetConfig().Framework.Name, framework.GetConfig().Framework.Version)
-		log.Printf("Enabled features: %+v", framework.ListEnabledFeatures())
+		log.Printf("🌐 Server starting on port %s", appConfig.Port)
+		log.Printf("📦 Framework: %s v%s", framework.GetConfig().Framework.Name, framework.GetConfig().Framework.Version)
+		log.Printf("📊 %s", registry.Stats())
 
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Failed to start server: %v", err)
@@ -87,7 +89,7 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	log.Println("Shutting down server...")
+	log.Println("🛑 Shutting down server...")
 
 	// Create shutdown context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -99,9 +101,11 @@ func main() {
 	}
 
 	// Shutdown framework
+	log.Println("Shutting down framework...")
 	if err := framework.Shutdown(ctx); err != nil {
 		log.Printf("Framework shutdown error: %v", err)
 	}
 
+	log.Println("✅ Framework shutdown completed")
 	log.Println("Server exited")
 }

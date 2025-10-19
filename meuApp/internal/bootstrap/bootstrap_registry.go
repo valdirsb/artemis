@@ -1,0 +1,190 @@
+package bootstrap
+
+import (
+	"context"
+	"fmt"
+	"log"
+
+	"meuApp/internal/modules"
+	"meuApp/internal/modules/user/adapters"
+	"meuApp/pkg/adapters/database/mysql"
+	"meuApp/pkg/config"
+	"meuApp/pkg/container"
+	"meuApp/pkg/contracts"
+	"meuApp/pkg/events"
+	"meuApp/pkg/framework"
+	frameworkInterfaces "meuApp/pkg/framework/interfaces"
+	"meuApp/pkg/framework/providers"
+	grpcProvider "meuApp/pkg/framework/providers/grpc"
+
+	"google.golang.org/grpc"
+	"gorm.io/gorm"
+)
+
+// FrameworkBootstrapWithRegistry configures the application using ModuleRegistry
+func FrameworkBootstrapWithRegistry(configPath string) (*container.Container, *container.ModuleRegistry, *framework.Framework, error) {
+	log.Println("🚀 Starting bootstrap with ModuleRegistry...")
+
+	// 1. Create DI container
+	c := container.NewContainer()
+
+	// 2. Initialize framework
+	fw, err := framework.NewFramework(configPath, c)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to initialize framework: %w", err)
+	}
+
+	// 3. Register framework in container
+	c.RegisterSingleton("framework", func() interface{} {
+		return fw
+	})
+
+	// 4. Initialize framework
+	ctx := context.Background()
+	if err := fw.Initialize(ctx); err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to initialize framework: %w", err)
+	}
+
+	// 5. Setup core infrastructure
+	db, eventBus, logger, err := setupCoreInfrastructure(c, fw)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to setup infrastructure: %w", err)
+	}
+
+	// 6. Create ModuleRegistry
+	registry := container.NewModuleRegistry(c)
+
+	// 7. Register all modules (ORDER MATTERS!)
+	if err := registerModules(registry, db, eventBus, logger); err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to register modules: %w", err)
+	}
+
+	// 8. Initialize gRPC if enabled
+	if framework.IsEnabled("protocols", "grpc") {
+		if err := initializeGRPCWithRegistry(fw, registry); err != nil {
+			return nil, nil, nil, fmt.Errorf("failed to initialize gRPC: %w", err)
+		}
+	}
+
+	// 9. Print statistics
+	stats := registry.Stats()
+	log.Printf("✅ Bootstrap completed: %s", stats.String())
+
+	return c, registry, fw, nil
+}
+
+// setupCoreInfrastructure initializes database, event bus, and logger
+func setupCoreInfrastructure(c *container.Container, fw *framework.Framework) (*gorm.DB, *events.EventBus, contracts.Logger, error) {
+	var db *gorm.DB
+	var eventBus *events.EventBus
+	var logger contracts.Logger
+
+	// Database
+	if framework.IsEnabled("database", "mysql") {
+		cfg, err := config.LoadConfig()
+		if err != nil {
+			return nil, nil, nil, fmt.Errorf("failed to load config: %w", err)
+		}
+
+		dbConfig := &mysql.DatabaseConfig{
+			Host:     cfg.DBHost,
+			Port:     cfg.DBPort,
+			Username: cfg.DBUsername,
+			Password: cfg.DBPassword,
+			Database: cfg.DBDatabase,
+		}
+
+		db, err = mysql.Connect(dbConfig)
+		if err != nil {
+			return nil, nil, nil, fmt.Errorf("failed to connect to database: %w", err)
+		}
+
+		// Run migrations
+		if err := mysql.AutoMigrate(db); err != nil {
+			return nil, nil, nil, fmt.Errorf("failed to run migrations: %w", err)
+		}
+
+		c.Register("database", db)
+		log.Println("✅ Database connected and migrated")
+	}
+
+	// Event Bus
+	if framework.IsEnabled("core", "event_system") {
+		eventBus = events.NewEventBus()
+		c.Register("eventbus", eventBus)
+		log.Println("✅ Event bus initialized")
+	}
+
+	// Logger
+	logger = adapters.NewStructuredLogger()
+	c.Register("logger", logger)
+	log.Println("✅ Logger initialized")
+
+	return db, eventBus, logger, nil
+}
+
+// registerModules registers all application modules
+func registerModules(registry *container.ModuleRegistry, db *gorm.DB, eventBus *events.EventBus, logger contracts.Logger) error {
+	log.Println("📦 Registering modules...")
+
+	// Create modules (ORDER MATTERS - dependencies!)
+	applicationModules := []frameworkInterfaces.Module{
+		modules.NewUserModule(db, eventBus),
+		modules.NewProductModule(db, eventBus, logger),
+		modules.NewOrderModule(db, eventBus, logger), // Requires User + Product
+	}
+
+	// Register each module
+	for _, module := range applicationModules {
+		log.Printf("  → Registering module: %s", module.Name())
+		if err := module.Register(registry); err != nil {
+			return fmt.Errorf("failed to register module %s: %w", module.Name(), err)
+		}
+	}
+
+	log.Printf("✅ All %d modules registered successfully", len(applicationModules))
+	return nil
+}
+
+// initializeGRPCWithRegistry initializes gRPC provider with registered services
+func initializeGRPCWithRegistry(fw *framework.Framework, registry *container.ModuleRegistry) error {
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		return fmt.Errorf("failed to load config: %w", err)
+	}
+
+	grpcProv := grpcProvider.NewGRPCProvider(cfg.GRPCPort)
+
+	// Register all gRPC services from registry BEFORE initializing
+	// The services are registered and will be initialized when provider starts
+	grpcServices := registry.GetGRPCServices()
+	for _, service := range grpcServices {
+		// service already implements the RegisterWithServer method
+		// we need to wrap it in a type that satisfies grpcProvider.ServiceRegistrar
+		grpcProv.RegisterService(&grpcServiceAdapter{service: service})
+	}
+
+	fw.RegisterProvider("grpc", grpcProv)
+	log.Printf("✅ gRPC provider registered on port %s with %d services", cfg.GRPCPort, len(grpcServices))
+
+	// Initialize gRPC provider (this will create server and start listening)
+	ctx := context.Background()
+	deps := providers.Dependencies{
+		Config: fw.GetConfig(),
+	}
+	if err := grpcProv.Initialize(ctx, deps); err != nil {
+		return fmt.Errorf("failed to initialize gRPC provider: %w", err)
+	}
+
+	log.Println("✅ All gRPC services registered and server started")
+	return nil
+}
+
+// grpcServiceAdapter adapts container.GRPCServiceRegistrar to grpcProvider.ServiceRegistrar
+type grpcServiceAdapter struct {
+	service container.GRPCServiceRegistrar
+}
+
+func (a *grpcServiceAdapter) RegisterWithServer(server *grpc.Server) {
+	a.service.RegisterService(server)
+}
