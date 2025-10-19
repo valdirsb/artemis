@@ -1,7 +1,7 @@
 # ✅ Checklist de Refatoração - Vista Rápida
 
-> **Progresso Geral:** 93% (130/140 tarefas)
-> **Última Atualização:** 18 de Outubro de 2025 - Fase 7.1 Documentação 100% COMPLETA! 📚✨
+> **Progresso Geral:** 94% (134/143 tarefas)
+> **Última Atualização:** 19 de Outubro de 2025 - Fase 7.2 Testes Iniciada! 🧪✨
 
 ## 🔴 ALTA PRIORIDADE
 
@@ -214,7 +214,7 @@
 
 ## 🟢 BAIXA PRIORIDADE
 
-### 📚 Fase 7: Melhorias Extras (10/20) 🚧 EM ANDAMENTO
+### 📚 Fase 7: Melhorias Extras (14/23) 🚧 EM ANDAMENTO
 
 - [x] 7.1 Documentação (5/5) ✅ 100% COMPLETA!
   - [x] Gerar documentação Swagger/OpenAPI
@@ -239,12 +239,37 @@
   - ✅ Interface disponível em: http://localhost:8080/swagger/index.html
   - ✅ Todos os DTOs auto-gerados com schemas completos
 
-- [ ] 7.2 Testes (0/5)
-  - [ ] Unit tests para ModuleRegistry
-  - [ ] Integration tests por módulo
+- [x] 7.2 Testes (4/10) 🚧 40% COMPLETA
+  - [x] Planejamento e estrutura (`FASE7.2_PLANO.md`)
+  - [x] Unit tests para ModuleRegistry (18 testes, 74.7% cobertura)
+  - [x] Unit tests para Event Bus (22 testes, 62.3% cobertura)
+  - [x] Setup de coverage report (Makefile atualizado)
+  - [ ] Integration tests - User Module
+  - [ ] Integration tests - Product Module
+  - [ ] Integration tests - Order Module
   - [ ] E2E tests (HTTP endpoints)
   - [ ] E2E tests (gRPC services)
-  - [ ] Gerar coverage report (target: 80%+)
+  - [ ] Documentação final de testes
+  
+  **Arquivos criados:**
+  - ✅ `pkg/container/registry_test.go` (440 linhas, 18 testes)
+  - ✅ `pkg/events/eventbus_test.go` (389 linhas, 13 testes)
+  - ✅ `pkg/events/typed_test.go` (363 linhas, 11 testes)
+  - ✅ `docs/phases/FASE7.2_PLANO.md` (planejamento completo)
+  - ✅ `docs/phases/FASE7.2_RESUMO.md` (resumo de progresso)
+  
+  **Comandos Makefile:**
+  - ✅ `make test` - Todos os testes
+  - ✅ `make test-unit` - Testes unitários
+  - ✅ `make test-integration` - Testes de integração
+  - ✅ `make test-e2e` - Testes E2E
+  - ✅ `make test-coverage` - Cobertura completa
+  - ✅ `make test-coverage-unit` - Cobertura unitária
+  - ✅ `make test-watch` - Watch mode
+  
+  **Cobertura Atual:**
+  - ✅ pkg/container: 74.7%
+  - ✅ pkg/events: 62.3%
 
 - [ ] 7.3 Observabilidade (0/5)
   - [ ] Integrar Prometheus metrics
@@ -260,7 +285,7 @@
   - [ ] Input validation com validator/v10
   - [ ] CORS e security headers
 
-**Status:** 🚧 45% Completa (9/20 tarefas)
+**Status:** 🚧 61% Completa (14/23 tarefas)
 
 ---
 
@@ -274,9 +299,12 @@
 | 4 | Erros | 15/15 | ✅ Completo (100%) |
 | 5 | Event Bus | 10/12 | ✅ Completo (83% - core done!) 🎉 |
 | - | Correções | 2/2 | ✅ Completo (100%) |
-| 6 | Auto-registro | 11/13 | 🚀 Quase lá (85%) |
-| 7 | Extras | 0/20 | ⬜ Não Iniciado |
-| **TOTAL** | | **112/130** | **86%** 🚀 |
+| 6 | Auto-registro | 18/18 | ✅ Completo (100%) 🎉 |
+| 7.1 | Documentação | 5/5 | ✅ Completo (100%) 📚 |
+| 7.2 | Testes | 4/10 | 🚧 Em Progresso (40%) 🧪 |
+| 7.3 | Observabilidade | 0/5 | ⬜ Não Iniciado |
+| 7.4 | Performance | 0/5 | ⬜ Não Iniciado |
+| **TOTAL** | | **134/143** | **94%** 🚀 |
 
 ---
 

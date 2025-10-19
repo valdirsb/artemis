@@ -11,24 +11,30 @@ GO_VERSION=1.21
 help:
 	@echo "Comandos disponíveis:"
 	@echo ""
-	@echo "  build         - Compila a aplicação"
-	@echo "  run           - Executa a aplicação tradicional"
-	@echo "  run-framework - Executa a aplicação com framework"
-	@echo "  test          - Executa os testes"
-	@echo "  proto-gen     - Gera código Go a partir dos arquivos .proto"
-	@echo "  grpc-test     - Testa os serviços gRPC com grpcurl"
-	@echo "  docker-up     - Inicia MySQL via Docker Compose"
-	@echo "  docker-down   - Para e remove containers Docker"
-	@echo "  docker-logs   - Mostra logs do MySQL"
-	@echo "  api-test      - Executa testes da API REST"
-	@echo "  grpc-test     - Executa testes dos serviços gRPC"
-	@echo "  clean         - Remove arquivos gerados"
-	@echo "  setup         - Configuração inicial completa"
-	@echo "  setup-framework - Configuração inicial do framework"
-	@echo "  docs          - Gera documentação dos módulos"
-	@echo "  db-shell      - Conecta ao MySQL via CLI"
-	@echo "  dev           - Modo desenvolvimento com hot reload"
-	@echo "  framework-info - Mostra informações do framework"
+	@echo "  build              - Compila a aplicação"
+	@echo "  run                - Executa a aplicação tradicional"
+	@echo "  run-framework      - Executa a aplicação com framework"
+	@echo "  test               - Executa todos os testes"
+	@echo "  test-unit          - Executa testes unitários"
+	@echo "  test-integration   - Executa testes de integração"
+	@echo "  test-e2e           - Executa testes E2E"
+	@echo "  test-coverage      - Gera relatório de cobertura completo"
+	@echo "  test-coverage-unit - Gera relatório de cobertura unitária"
+	@echo "  test-watch         - Executa testes em modo watch"
+	@echo "  proto-gen          - Gera código Go a partir dos arquivos .proto"
+	@echo "  grpc-test          - Testa os serviços gRPC com grpcurl"
+	@echo "  docker-up          - Inicia MySQL via Docker Compose"
+	@echo "  docker-down        - Para e remove containers Docker"
+	@echo "  docker-logs        - Mostra logs do MySQL"
+	@echo "  api-test           - Executa testes da API REST"
+	@echo "  clean              - Remove arquivos gerados"
+	@echo "  setup              - Configuração inicial completa"
+	@echo "  setup-framework    - Configuração inicial do framework"
+	@echo "  docs               - Gera documentação dos módulos"
+	@echo "  db-shell           - Conecta ao MySQL via CLI"
+	@echo "  dev                - Modo desenvolvimento com hot reload"
+	@echo "  framework-info     - Mostra informações do framework"
+	@echo "  stats              - Mostra estatísticas do projeto"
 	@echo ""
 
 ## setup: Configuração inicial completa
@@ -86,6 +92,48 @@ run:
 test:
 	@echo "🧪 Executando testes..."
 	@go test -v ./...
+
+## test-unit: Executa apenas testes unitários
+test-unit:
+	@echo "🧪 Executando testes unitários..."
+	@go test -v ./pkg/...
+
+## test-integration: Executa apenas testes de integração
+test-integration:
+	@echo "🧪 Executando testes de integração..."
+	@go test -v ./internal/.../tests/integration/...
+
+## test-e2e: Executa apenas testes E2E
+test-e2e:
+	@echo "🧪 Executando testes E2E..."
+	@go test -v ./tests/e2e/...
+
+## test-coverage: Executa testes com cobertura
+test-coverage:
+	@echo "📊 Gerando relatório de cobertura..."
+	@go test -coverprofile=coverage.out ./...
+	@go tool cover -html=coverage.out -o coverage.html
+	@echo "✅ Relatório gerado: coverage.html"
+	@go tool cover -func=coverage.out | grep total
+
+## test-coverage-unit: Cobertura apenas de testes unitários
+test-coverage-unit:
+	@echo "📊 Gerando cobertura de testes unitários..."
+	@go test -coverprofile=coverage-unit.out -run="^Test" ./pkg/...
+	@go tool cover -html=coverage-unit.out -o coverage-unit.html
+	@echo "✅ Relatório gerado: coverage-unit.html"
+	@go tool cover -func=coverage-unit.out | grep -E "(container|events)" || true
+	@echo ""
+	@go tool cover -func=coverage-unit.out | grep total
+
+## test-watch: Executa testes em modo watch (requer gotestsum)
+test-watch:
+	@if command -v gotestsum > /dev/null; then \
+		echo "👀 Executando testes em modo watch..."; \
+		gotestsum --watch -- -v ./...; \
+	else \
+		echo "❌ gotestsum não encontrado. Instale com: go install gotest.tools/gotestsum@latest"; \
+	fi
 
 ## grpc-test: Testa os serviços gRPC
 grpc-test:
