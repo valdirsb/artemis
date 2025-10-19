@@ -6,6 +6,7 @@ import (
 
 	"meuApp/internal/modules/product/dto"
 	"meuApp/internal/modules/product/ports"
+	"meuApp/pkg/adapters/http/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -28,24 +29,24 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 
 	createdProduct, err := h.productService.CreateProduct(c.Request.Context(), req.Name, req.Description, req.CategoryID, req.Price, req.Stock)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		middleware.RespondWithAppError(c.Writer, err)
 		return
 	}
 
 	response := dto.ToProductResponse(createdProduct)
-	c.JSON(http.StatusCreated, response)
+	middleware.RespondWithJSON(c.Writer, http.StatusCreated, response)
 }
 
 func (h *ProductHandler) GetProduct(c *gin.Context) {
 	id := c.Param("id")
 	product, err := h.productService.GetProductByID(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		middleware.RespondWithAppError(c.Writer, err)
 		return
 	}
 
 	response := dto.ToProductResponse(product)
-	c.JSON(http.StatusOK, response)
+	middleware.RespondWithJSON(c.Writer, http.StatusOK, response)
 }
 
 func (h *ProductHandler) UpdateProduct(c *gin.Context) {
@@ -59,19 +60,19 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 
 	updatedProduct, err := h.productService.UpdateProduct(c.Request.Context(), id, req.Name, req.Description, req.CategoryID, req.Price, req.Stock)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		middleware.RespondWithAppError(c.Writer, err)
 		return
 	}
 
 	response := dto.ToProductResponse(updatedProduct)
-	c.JSON(http.StatusOK, response)
+	middleware.RespondWithJSON(c.Writer, http.StatusOK, response)
 }
 
 func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 	id := c.Param("id")
 
 	if err := h.productService.DeleteProduct(c.Request.Context(), id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		middleware.RespondWithAppError(c.Writer, err)
 		return
 	}
 

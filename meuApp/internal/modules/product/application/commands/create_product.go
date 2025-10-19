@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	"meuApp/internal/modules/product"
 	"meuApp/internal/modules/product/domain"
 	"meuApp/internal/modules/product/ports"
 	"meuApp/pkg/contracts"
+	apperrors "meuApp/pkg/errors"
 )
 
 // CreateProductCommand representa o comando para criar um produto
@@ -42,11 +44,25 @@ func NewCreateProductHandler(
 func (h *CreateProductHandler) Handle(ctx context.Context, cmd CreateProductCommand) (*domain.Product, error) {
 	h.logger.Info(fmt.Sprintf("Creating product: %s", cmd.Name))
 
+	// Validações de entrada
+	if cmd.Name == "" {
+		return nil, product.ErrInvalidName
+	}
+	if cmd.Description == "" {
+		return nil, product.ErrInvalidDescription
+	}
+	if cmd.Price <= 0 {
+		return nil, product.ErrInvalidPrice
+	}
+	if cmd.Stock < 0 {
+		return nil, product.ErrInvalidStock
+	}
+
 	// Gerar ID (pode ser substituído por UUID generator)
 	productID := fmt.Sprintf("prod_%d", ctx.Value("timestamp"))
 
 	// Criar aggregate do produto
-	product, err := domain.NewProduct(
+	newProduct, err := domain.NewProduct(
 		productID,
 		cmd.Name,
 		cmd.Description,
@@ -56,13 +72,13 @@ func (h *CreateProductHandler) Handle(ctx context.Context, cmd CreateProductComm
 	)
 	if err != nil {
 		h.logger.Error(fmt.Sprintf("Failed to create product aggregate: %v", err))
-		return nil, fmt.Errorf("invalid product data: %w", err)
+		return nil, apperrors.WrapError(err, "invalid product data")
 	}
 
 	// Salvar no repositório
-	if err := h.productRepo.Create(ctx, product); err != nil {
+	if err := h.productRepo.Create(ctx, newProduct); err != nil {
 		h.logger.Error(fmt.Sprintf("Failed to save product: %v", err))
-		return nil, fmt.Errorf("failed to create product: %w", err)
+		return nil, apperrors.NewInfrastructureError("failed to create product", err)
 	}
 
 	// Publicar evento (assíncrono)
@@ -70,18 +86,18 @@ func (h *CreateProductHandler) Handle(ctx context.Context, cmd CreateProductComm
 		event := contracts.Event{
 			Type: "product.created",
 			Payload: map[string]interface{}{
-				"product_id":  product.ID,
-				"name":        product.Name,
-				"price":       product.Price,
-				"stock":       product.Stock,
-				"category_id": product.CategoryID,
+				"product_id":  newProduct.ID,
+				"name":        newProduct.Name,
+				"price":       newProduct.Price,
+				"stock":       newProduct.Stock,
+				"category_id": newProduct.CategoryID,
 			},
-			Timestamp: product.CreatedAt,
+			Timestamp: newProduct.CreatedAt,
 		}
 		h.eventBus.Publish(context.Background(), event)
-		h.logger.Info(fmt.Sprintf("Event published: product.created for %s", product.ID))
+		h.logger.Info(fmt.Sprintf("Event published: product.created for %s", newProduct.ID))
 	}()
 
-	h.logger.Info(fmt.Sprintf("Product created successfully: %s", product.ID))
-	return product, nil
+	h.logger.Info(fmt.Sprintf("Product created successfully: %s", newProduct.ID))
+	return newProduct, nil
 }

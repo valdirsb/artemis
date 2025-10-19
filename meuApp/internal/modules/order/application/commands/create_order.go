@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 
+	"meuApp/internal/modules/order"
 	"meuApp/internal/modules/order/domain"
 	"meuApp/internal/modules/order/ports"
 	productPorts "meuApp/internal/modules/product/ports"
 	userPorts "meuApp/internal/modules/user/ports"
 	"meuApp/pkg/contracts"
+	apperrors "meuApp/pkg/errors"
 )
 
 // CreateOrderCommand representa o comando para criar um pedido
@@ -53,27 +55,39 @@ func NewCreateOrderHandler(
 func (h *CreateOrderHandler) Handle(ctx context.Context, cmd CreateOrderCommand) (*domain.Order, error) {
 	h.logger.Info(fmt.Sprintf("Creating order for user: %s", cmd.UserID))
 
+	// Validações de entrada
+	if cmd.UserID == "" {
+		return nil, order.ErrInvalidUserID
+	}
+	if len(cmd.Items) == 0 {
+		return nil, order.ErrEmptyOrderItems
+	}
+
 	// Validar se o usuário existe
-	_, err := h.userRepo.GetByID(ctx, cmd.UserID)
-	if err != nil {
+	user, err := h.userRepo.GetByID(ctx, cmd.UserID)
+	if err != nil || user == nil {
 		h.logger.Error(fmt.Sprintf("User not found: %s", cmd.UserID))
-		return nil, fmt.Errorf("user not found: %w", err)
+		return nil, order.NewUserNotFoundError(cmd.UserID)
 	}
 
 	// Validar produtos e calcular preços
 	orderItems := make([]domain.OrderItem, 0, len(cmd.Items))
 	for _, item := range cmd.Items {
+		if item.Quantity <= 0 {
+			return nil, order.ErrInvalidQuantity
+		}
+
 		product, err := h.productRepo.GetByID(ctx, item.ProductID)
-		if err != nil {
+		if err != nil || product == nil {
 			h.logger.Error(fmt.Sprintf("Product not found: %s", item.ProductID))
-			return nil, fmt.Errorf("product %s not found: %w", item.ProductID, err)
+			return nil, order.NewProductNotFoundError(item.ProductID)
 		}
 
 		// Verificar estoque disponível
 		if product.Stock < item.Quantity {
 			h.logger.Warn(fmt.Sprintf("Insufficient stock for product %s: available=%d, requested=%d",
 				item.ProductID, product.Stock, item.Quantity))
-			return nil, fmt.Errorf("insufficient stock for product %s", item.ProductID)
+			return nil, order.NewInsufficientStockError(item.ProductID, product.Stock, item.Quantity)
 		}
 
 		orderItems = append(orderItems, domain.OrderItem{
@@ -87,16 +101,16 @@ func (h *CreateOrderHandler) Handle(ctx context.Context, cmd CreateOrderCommand)
 	orderID := fmt.Sprintf("order_%d", ctx.Value("timestamp"))
 
 	// Criar aggregate do pedido
-	order, err := domain.NewOrder(orderID, cmd.UserID, orderItems)
+	newOrder, err := domain.NewOrder(orderID, cmd.UserID, orderItems)
 	if err != nil {
 		h.logger.Error(fmt.Sprintf("Failed to create order aggregate: %v", err))
-		return nil, fmt.Errorf("invalid order data: %w", err)
+		return nil, apperrors.WrapError(err, "invalid order data")
 	}
 
 	// Salvar no repositório
-	if err := h.orderRepo.Create(ctx, order); err != nil {
+	if err := h.orderRepo.Create(ctx, newOrder); err != nil {
 		h.logger.Error(fmt.Sprintf("Failed to save order: %v", err))
-		return nil, fmt.Errorf("failed to create order: %w", err)
+		return nil, apperrors.NewInfrastructureError("failed to create order", err)
 	}
 
 	// Publicar evento (assíncrono)
@@ -104,17 +118,17 @@ func (h *CreateOrderHandler) Handle(ctx context.Context, cmd CreateOrderCommand)
 		event := contracts.Event{
 			Type: "order.created",
 			Payload: map[string]interface{}{
-				"order_id": order.ID,
-				"user_id":  order.UserID,
-				"total":    order.Total,
-				"items":    len(order.Items),
+				"order_id": newOrder.ID,
+				"user_id":  newOrder.UserID,
+				"total":    newOrder.Total,
+				"items":    len(newOrder.Items),
 			},
-			Timestamp: order.CreatedAt,
+			Timestamp: newOrder.CreatedAt,
 		}
 		h.eventBus.Publish(context.Background(), event)
-		h.logger.Info(fmt.Sprintf("Event published: order.created for %s", order.ID))
+		h.logger.Info(fmt.Sprintf("Event published: order.created for %s", newOrder.ID))
 	}()
 
-	h.logger.Info(fmt.Sprintf("Order created successfully: %s (total: %.2f)", order.ID, order.Total))
-	return order, nil
+	h.logger.Info(fmt.Sprintf("Order created successfully: %s (total: %.2f)", newOrder.ID, newOrder.Total))
+	return newOrder, nil
 }

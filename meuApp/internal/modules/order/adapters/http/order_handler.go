@@ -6,6 +6,7 @@ import (
 	"meuApp/internal/modules/order/domain"
 	"meuApp/internal/modules/order/dto"
 	"meuApp/internal/modules/order/ports"
+	"meuApp/pkg/adapters/http/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -31,24 +32,24 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 
 	createdOrder, err := h.orderService.CreateOrder(c.Request.Context(), req.UserID, items)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		middleware.RespondWithAppError(c.Writer, err)
 		return
 	}
 
 	response := dto.ToOrderResponse(createdOrder)
-	c.JSON(http.StatusCreated, response)
+	middleware.RespondWithJSON(c.Writer, http.StatusCreated, response)
 }
 
 func (h *OrderHandler) GetOrder(c *gin.Context) {
 	id := c.Param("id")
 	order, err := h.orderService.GetOrderByID(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		middleware.RespondWithAppError(c.Writer, err)
 		return
 	}
 
 	response := dto.ToOrderResponse(order)
-	c.JSON(http.StatusOK, response)
+	middleware.RespondWithJSON(c.Writer, http.StatusOK, response)
 }
 
 func (h *OrderHandler) GetOrdersByUser(c *gin.Context) {
@@ -56,12 +57,12 @@ func (h *OrderHandler) GetOrdersByUser(c *gin.Context) {
 
 	orders, err := h.orderService.GetOrdersByUserID(c.Request.Context(), userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		middleware.RespondWithAppError(c.Writer, err)
 		return
 	}
 
 	response := dto.ToOrderResponseList(orders)
-	c.JSON(http.StatusOK, response)
+	middleware.RespondWithJSON(c.Writer, http.StatusOK, response)
 }
 
 func (h *OrderHandler) UpdateOrderStatus(c *gin.Context) {
@@ -78,20 +79,20 @@ func (h *OrderHandler) UpdateOrderStatus(c *gin.Context) {
 	status := domain.OrderStatus(req.Status)
 
 	if err := h.orderService.UpdateOrderStatus(c.Request.Context(), id, status); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		middleware.RespondWithAppError(c.Writer, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Order status updated successfully"})
+	middleware.RespondWithJSON(c.Writer, http.StatusOK, gin.H{"message": "Order status updated successfully"})
 }
 
 func (h *OrderHandler) CancelOrder(c *gin.Context) {
 	id := c.Param("id")
 
 	if err := h.orderService.CancelOrder(c.Request.Context(), id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		middleware.RespondWithAppError(c.Writer, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Order cancelled successfully"})
+	middleware.RespondWithJSON(c.Writer, http.StatusOK, gin.H{"message": "Order cancelled successfully"})
 }

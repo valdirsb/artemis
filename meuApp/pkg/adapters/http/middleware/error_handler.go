@@ -1,0 +1,85 @@
+package middleware
+
+import (
+	"encoding/json"
+	"log"
+	"net/http"
+
+	apperrors "meuApp/pkg/errors"
+)
+
+// ErrorResponse representa a estrutura de resposta de erro HTTP
+type ErrorResponse struct {
+	Error   string            `json:"error"`
+	Type    string            `json:"type,omitempty"`
+	Message string            `json:"message"`
+	Details map[string]string `json:"details,omitempty"`
+}
+
+// ErrorHandler é um middleware que captura panics e trata erros
+func ErrorHandler(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				log.Printf("Panic recovered: %v", err)
+				respondWithError(w, apperrors.NewInternalError("Unexpected error occurred", nil))
+			}
+		}()
+
+		// Cria um ResponseWriter customizado para capturar erros
+		next.ServeHTTP(w, r)
+	})
+}
+
+// RespondWithAppError envia uma resposta de erro baseada em AppError
+func RespondWithAppError(w http.ResponseWriter, err error) {
+	if err == nil {
+		return
+	}
+
+	// Tenta converter para AppError
+	if appErr, ok := apperrors.AsAppError(err); ok {
+		respondWithError(w, appErr)
+		return
+	}
+
+	// Erro genérico
+	respondWithError(w, apperrors.NewInternalError("An unexpected error occurred", err))
+}
+
+// respondWithError envia a resposta de erro HTTP
+func respondWithError(w http.ResponseWriter, appErr *apperrors.AppError) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(appErr.HTTPStatusCode())
+
+	response := ErrorResponse{
+		Error:   string(appErr.Type),
+		Type:    string(appErr.Type),
+		Message: appErr.Message,
+		Details: appErr.Details,
+	}
+
+	// Log do erro (não expor detalhes internos)
+	if appErr.Err != nil {
+		log.Printf("Error [%s] %s: %v", appErr.Type, appErr.Message, appErr.Err)
+	} else {
+		log.Printf("Error [%s] %s", appErr.Type, appErr.Message)
+	}
+
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		log.Printf("Failed to encode error response: %v", err)
+	}
+}
+
+// RespondWithJSON envia uma resposta JSON de sucesso
+func RespondWithJSON(w http.ResponseWriter, statusCode int, payload interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+
+	if payload != nil {
+		if err := json.NewEncoder(w).Encode(payload); err != nil {
+			log.Printf("Failed to encode JSON response: %v", err)
+			RespondWithAppError(w, apperrors.NewInternalError("Failed to encode response", err))
+		}
+	}
+}
