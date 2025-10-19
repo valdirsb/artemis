@@ -2,13 +2,13 @@ package commands
 
 import (
 	"context"
-	"time"
 
 	"meuApp/internal/modules/user"
 	"meuApp/internal/modules/user/domain"
 	"meuApp/internal/modules/user/ports"
 	"meuApp/pkg/contracts"
 	apperrors "meuApp/pkg/errors"
+	"meuApp/pkg/events"
 
 	"github.com/google/uuid"
 )
@@ -24,6 +24,7 @@ type CreateUserHandler struct {
 	passwordHasher ports.PasswordHasher
 	emailService   ports.EmailService
 	eventPublisher contracts.EventPublisher
+	typedPublisher *events.TypedEventPublisher
 	logger         contracts.Logger
 }
 
@@ -34,11 +35,18 @@ func NewCreateUserHandler(
 	eventPublisher contracts.EventPublisher,
 	logger contracts.Logger,
 ) *CreateUserHandler {
+	// Criar typed publisher a partir do eventPublisher (que é um EventBus)
+	var typedPub *events.TypedEventPublisher
+	if eventBus, ok := eventPublisher.(*events.EventBus); ok {
+		typedPub = events.NewTypedEventPublisher(eventBus)
+	}
+
 	return &CreateUserHandler{
 		userRepo:       userRepo,
 		passwordHasher: passwordHasher,
 		emailService:   emailService,
 		eventPublisher: eventPublisher,
+		typedPublisher: typedPub,
 		logger:         logger,
 	}
 }
@@ -93,18 +101,15 @@ func (h *CreateUserHandler) Handle(ctx context.Context, cmd CreateUserCommand) (
 		return nil, apperrors.NewInfrastructureError("failed to create user", err)
 	}
 
-	// Publicar evento
-	event := contracts.Event{
-		Type:      "user.created",
-		Timestamp: time.Now(),
-		Payload: contracts.UserCreatedEvent{
-			UserID: userID,
-			Email:  cmd.Email,
-		},
-	}
-
-	if err := h.eventPublisher.Publish(ctx, event); err != nil {
-		h.logger.Warn("Failed to publish user created event", contracts.Field{Key: "error", Value: err})
+	// ✨ Publicar evento type-safe
+	if h.typedPublisher != nil {
+		if err := h.typedPublisher.PublishUserCreated(ctx, events.UserCreatedEvent{
+			UserID:   userID,
+			Username: cmd.Username,
+			Email:    cmd.Email,
+		}); err != nil {
+			h.logger.Warn("Failed to publish user created event", contracts.Field{Key: "error", Value: err})
+		}
 	}
 
 	// Enviar email de boas-vindas (async)

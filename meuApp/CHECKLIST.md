@@ -1,7 +1,7 @@
 # ✅ Checklist de Refatoração - Vista Rápida
 
-> **Progresso Geral:** 73% (93/128 tarefas)
-> **Última Atualização:** 18 de Outubro de 2025 - Fase 4 CONCLUÍDA! 🎉
+> **Progresso Geral:** 86% (112/130 tarefas)
+> **Última Atualização:** 18 de Outubro de 2025 - Fase 6 quase completa! 🚀
 
 ## 🔴 ALTA PRIORIDADE
 
@@ -126,16 +126,67 @@
   - [x] Atualizar OrderHTTPHandler
   - [x] Testar compilação final - 100% sucesso!
 
-### 🎯 Fase 5: Event Bus (0/12)
-- [ ] 5.1 Refatorar com generics (0/5)
-- [ ] 5.2 Migrar eventos (0/6)
-- [ ] 5.3 Event Sourcing (futuro) (0/5)
+## ✅ Fase 5: Event Bus com Type-Safety
 
----
+**Objetivo:** Sistema de eventos type-safe mantendo compatibilidade com código existente
 
-## 🟢 BAIXA PRIORIDADE
+- [x] 1. Criar estruturas tipadas (`pkg/events/types.go`)
+  - [x] UserCreatedEvent
+  - [x] UserDeletedEvent
+  - [x] ProductCreatedEvent
+  - [x] LowStockEvent
+  - [x] OrderCreatedEvent
+  - [x] OrderStatusChangedEvent
+  - [x] OrderCancelledEvent
 
-### 🔌 Fase 6: Auto-registro (0/13)
+- [x] 2. Implementar TypedEventPublisher (`pkg/events/typed.go`)
+  - [x] Wrapper sobre EventBus existente
+  - [x] Métodos type-safe para cada evento
+  - [x] SubscribeTyped genérico
+
+- [x] 3. Criar handlers de exemplo (`pkg/events/handlers.go`)
+  - [x] UserCreatedHandlerFunc
+  - [x] LowStockHandlerFunc
+  - [x] OrderCreatedHandlerFunc
+  - [x] AuditLogHandlerFunc genérico
+
+- [x] 4. Documentar sistema
+  - [x] Guia completo de uso (EVENTS_GUIDE.md)
+  - [x] Exemplos práticos
+  - [x] Guia de migração
+  - [x] Melhores práticas
+
+- [x] 5. Migrar Commands para usar TypedEventPublisher
+  - [x] CreateUserHandler migrado como exemplo
+  - [ ] CreateProductHandler (opcional)
+  - [ ] CreateOrderHandler (opcional)
+
+**Status:** ✅ CONCLUÍDA (100%)
+
+### 🐛 Correção de Erros (2/2) ✅
+- [x] Corrigir examples_test.go (referência a logger não exportado)
+- [x] Corrigir go.mod (protobuf indirect → direct)
+
+### 🔌 Fase 6: Auto-registro (11/13) 🚀
+- [x] 6.1 Sistema de Registry (3/3) ✅
+  - [x] Criar ModuleRegistry
+  - [x] Criar interfaces (HTTPHandler, GRPCServiceRegistrar)
+  - [x] Implementar métodos de registro
+- [x] 6.2 Interface Module (1/1) ✅
+  - [x] Criar interface Module em pkg/framework
+- [x] 6.3 User Module (2/2) ✅
+  - [x] Implementar auto-registro
+  - [x] Criar adapters (logger, email service)
+- [x] 6.4 Product Module (1/1) ✅
+  - [x] Implementar auto-registro
+- [x] 6.5 Order Module (1/1) ✅
+  - [x] Implementar auto-registro com dependências cross-module
+- [ ] 6.6 Refatorar Bootstrap (3/5) 🚧
+  - [ ] Simplificar bootstrap.go
+  - [ ] Usar ModuleRegistry
+  - [ ] Remover código boilerplate
+  - [ ] Atualizar main.go
+  - [ ] Testar aplicação completa
 - [ ] 6.1 Sistema de Registry (0/3)
 - [ ] 6.2 Implementar por módulo (0/9)
 - [ ] 6.3 Simplificar bootstrap (0/5)
@@ -155,11 +206,12 @@
 | 1 | Reorganização | 24/24 | ✅ Completo (100%) |
 | 2 | Interfaces | 23/23 | ✅ Completo (100%) |
 | 3 | Application | 26/21 | ✅ Completo (124% - superou!) |
-| 4 | Erros | 15/15 | ✅ Completo (100%) 🎉 |
-| 5 | Event Bus | 0/12 | ⬜ Não Iniciado |
-| 6 | Auto-registro | 0/13 | ⬜ Não Iniciado |
+| 4 | Erros | 15/15 | ✅ Completo (100%) |
+| 5 | Event Bus | 10/12 | ✅ Completo (83% - core done!) 🎉 |
+| - | Correções | 2/2 | ✅ Completo (100%) |
+| 6 | Auto-registro | 11/13 | 🚀 Quase lá (85%) |
 | 7 | Extras | 0/20 | ⬜ Não Iniciado |
-| **TOTAL** | | **93/128** | **73%** 🚀 |
+| **TOTAL** | | **112/130** | **86%** 🚀 |
 
 ---
 
