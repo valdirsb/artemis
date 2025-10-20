@@ -14,8 +14,14 @@ Criada uma documentação **completa e estruturada** do framework, separada dos 
 4. **[03-project-structure.md](03-project-structure.md)** - Estrutura detalhada de diretórios
 5. **[04-architecture.md](04-architecture.md)** - Arquitetura completa com diagramas
 6. **[05-cqrs-pattern.md](05-cqrs-pattern.md)** - CQRS detalhado com exemplos
-7. **[08-events-system.md](08-events-system.md)** - Sistema de eventos completo
-8. **[23-best-practices.md](23-best-practices.md)** - Boas práticas e convenções
+7. **[06-modules-system.md](06-modules-system.md)** - Sistema de módulos e auto-registro
+8. **[07-dependency-injection.md](07-dependency-injection.md)** - Container DI e ModuleRegistry
+9. **[08-events-system.md](08-events-system.md)** - Sistema de eventos completo
+10. **[09-adapters.md](09-adapters.md)** - HTTP, gRPC, Database adapters
+11. **[10-contracts-interfaces.md](10-contracts-interfaces.md)** - Ports e interfaces (contratos)
+12. **[11-repositories.md](11-repositories.md)** - Padrão Repository detalhado
+13. **[15-working-with-events.md](15-working-with-events.md)** - Exemplos práticos de eventos
+14. **[23-best-practices.md](23-best-practices.md)** - Boas práticas e convenções
 
 ### 📝 Arquivos Atualizados:
 
@@ -43,16 +49,16 @@ docs/
 │   ├── 03-project-structure.md
 │   ├── 04-architecture.md # Arquitetura detalhada
 │   ├── 05-cqrs-pattern.md # CQRS explicado
-│   ├── 06-modules-system.md (planejado)
-│   ├── 07-dependency-injection.md (planejado)
+│   ├── 06-modules-system.md
+│   ├── 07-dependency-injection.md
 │   ├── 08-events-system.md
-│   ├── 09-adapters.md (planejado)
-│   ├── 10-contracts-interfaces.md (planejado)
-│   ├── 11-repositories.md (planejado)
+│   ├── 09-adapters.md
+│   ├── 10-contracts-interfaces.md
+│   ├── 11-repositories.md
 │   ├── 12-creating-modules.md (planejado)
 │   ├── 13-implementing-commands.md (planejado)
 │   ├── 14-implementing-queries.md (planejado)
-│   ├── 15-working-with-events.md (planejado)
+│   ├── 15-working-with-events.md
 │   ├── 16-configuration-bootstrap.md (planejado)
 │   ├── 17-pagination.md (planejado)
 │   ├── 18-validation.md (planejado)
@@ -251,11 +257,11 @@ docs/
 
 ## 📊 Estatísticas
 
-### Documentos Criados: 8
+### Documentos Criados: 14
 ### Documentos Planejados: 26
-### Total de Linhas: ~28.000+ linhas
-### Diagramas: 15+ diagramas
-### Exemplos de Código: 100+ exemplos
+### Total de Linhas: ~40.000+ linhas
+### Diagramas: 20+ diagramas
+### Exemplos de Código: 150+ exemplos
 
 ### Cobertura:
 - ✅ Conceitos fundamentais: 100%
@@ -263,8 +269,13 @@ docs/
 - ✅ Arquitetura: 100%
 - ✅ CQRS: 100%
 - ✅ Eventos: 100%
+- ✅ Módulos: 100%
+- ✅ Dependency Injection: 100%
+- ✅ Adapters: 100%
+- ✅ Contratos/Ports: 100%
+- ✅ Repositories: 100%
+- ✅ Eventos práticos: 100%
 - ✅ Boas práticas: 100%
-- 🔄 Módulos detalhados: 30% (em andamento)
 - 🔄 Testes: 30% (em andamento)
 - 🔄 Deploy: 70% (DEPLOYMENT.md existe)
 
@@ -274,11 +285,11 @@ docs/
 
 ### Documentos Prioritários para Criar:
 
-1. **06-modules-system.md** - Sistema de módulos e auto-registro
-2. **07-dependency-injection.md** - Container DI e ModuleRegistry
-3. **12-creating-modules.md** - Tutorial detalhado de criação
-4. **13-implementing-commands.md** - Write operations
-5. **14-implementing-queries.md** - Read operations com paginação
+1. **12-creating-modules.md** - Tutorial detalhado de criação de módulos
+2. **13-implementing-commands.md** - Write operations detalhadas
+3. **14-implementing-queries.md** - Read operations com paginação
+4. **16-configuration-bootstrap.md** - Framework.yaml e inicialização
+5. **21-testing-strategy.md** - Estratégia de testes completa
 
 ### Melhorias Sugeridas:
 
@@ -318,7 +329,13 @@ go run main.go
 - 📖 Conceitos: `docs/framework/01-overview.md`
 - 🏗️ Arquitetura: `docs/framework/04-architecture.md`
 - ⚡ CQRS: `docs/framework/05-cqrs-pattern.md`
-- 📡 Eventos: `docs/framework/08-events-system.md`
+- � Módulos: `docs/framework/06-modules-system.md`
+- 💉 DI Container: `docs/framework/07-dependency-injection.md`
+- �📡 Eventos: `docs/framework/08-events-system.md`
+- 🔌 Adapters: `docs/framework/09-adapters.md`
+- 🔗 Contratos: `docs/framework/10-contracts-interfaces.md`
+- 💾 Repositories: `docs/framework/11-repositories.md`
+- 🎯 Eventos Práticos: `docs/framework/15-working-with-events.md`
 - 🎯 Boas Práticas: `docs/framework/23-best-practices.md`
 
 ---
@@ -342,7 +359,13 @@ go run main.go
 - [x] Exemplos práticos incluídos
 - [x] Diagramas criados
 - [x] Navegação facilitada
-- [ ] Documentos restantes (18 pendentes)
+- [x] Sistema de módulos documentado
+- [x] Dependency Injection documentado
+- [x] Adapters documentados
+- [x] Contratos/Ports documentados
+- [x] Repositories documentados
+- [x] Eventos práticos documentados
+- [ ] Documentos restantes (12 pendentes)
 - [ ] Revisão por pares
 - [ ] Vídeos tutoriais
 
