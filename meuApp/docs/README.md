@@ -1,45 +1,135 @@
-# 📚 Documentação do Projeto Artemis
+# 📚 Documentação do Artemis Framework
 
-> **Framework modular em Go** - Clean Architecture + Hexagonal + DDD + CQRS + Auto-Registro
-
-> **✅ Status:** Documentação 100% Completa (Fase 7.1)  
-> **📊 Métricas:** 4.646+ linhas | 9 documentos | 6 diagramas | 16 endpoints Swagger  
-> **🎯 Impacto:** -70% onboarding | -68% criar módulos | -83% deploy
+> **Framework modular em Go para aplicações enterprise**  
+> Clean Architecture + Hexagonal + DDD + CQRS + Auto-Registro
 
 ---
 
-## 🚀 Início Rápido
+## 🎯 Navegação Rápida
 
-**Novo no projeto?** Comece por aqui:
+### 🆕 **NOVO! Documentação Completa do Framework**
 
-1. 📖 [README Principal](../README.md) - Visão geral do projeto
-2. 🏗️ [ARCHITECTURE.md](./ARCHITECTURE.md) - Entenda a arquitetura (6 diagramas!)
-3. 📦 [MODULE_CREATION_GUIDE.md](./MODULE_CREATION_GUIDE.md) - Crie seu primeiro módulo (tutorial 12 passos)
-4. 🌐 [Swagger UI](http://localhost:8080/swagger/index.html) - Explore a API (16 endpoints)
-5. 🚀 [DEPLOYMENT.md](./DEPLOYMENT.md) - Configure e execute (deploy em 5min)
+👉 **[Framework - Guia Completo](framework/README.md)** - **COMECE AQUI!**
+
+A documentação foi completamente reorganizada! Se você é um **novo desenvolvedor** ou quer usar o Artemis como **base para um novo projeto**, siga esta ordem:
+
+1. **[Visão Geral](framework/01-overview.md)** - O que é e quando usar
+2. **[Guia de Início Rápido](framework/02-quickstart.md)** - Crie seu primeiro módulo
+3. **[Estrutura do Projeto](framework/03-project-structure.md)** - Organização de pastas
+4. **[Arquitetura](framework/04-architecture.md)** - Clean Architecture, Hexagonal, DDD
+5. **[Padrão CQRS](framework/05-cqrs-pattern.md)** - Commands e Queries
+6. **[Sistema de Eventos](framework/08-events-system.md)** - Event-driven architecture
+7. **[Boas Práticas](framework/23-best-practices.md)** - Convenções e recomendações
 
 ---
 
-## 📑 Documentação Disponível
+## � Para Desenvolvedores Iniciantes
 
-### 🏛️ Arquitetura
+**Novo no projeto?** Siga esta trilha:
+
+```
+1. Leia a Visão Geral do Framework
+   └─► docs/framework/01-overview.md
+
+2. Faça o Tutorial de Início Rápido
+   └─► docs/framework/02-quickstart.md
+
+3. Entenda a Estrutura do Projeto
+   └─► docs/framework/03-project-structure.md
+
+4. Crie seu Primeiro Módulo
+   └─► docs/framework/12-creating-modules.md
+
+5. Configure e Execute
+   └─► make migrate && go run main.go
+```
+
+---
+
+## � Organização da Documentação
+
+### 📖 `/framework` - Documentação Principal (NOVO!)
+
+**Documentação completa para uso do framework como base de projetos**
+
+- Guias passo a passo
+- Tutoriais práticos
+- Referência de arquitetura
+- Exemplos de código
+- Boas práticas
+
+👉 **[Acesse a documentação completa](framework/README.md)**
+
+### 🎯 `/adr` - Architecture Decision Records
+
+**Decisões arquiteturais tomadas no projeto**
+
+- [001: Clean Architecture](adr/001-clean-architecture.md)
+- [002: CQRS Pattern](adr/002-cqrs-pattern.md)
+- [003: Module Auto-Registration](adr/003-module-auto-registration.md)
+
+### 📦 `/archive` - Histórico de Refatorações
+
+**Documentação de refatorações anteriores (referência histórica)**
+
+- Sumários de implementação de features
+- Guias de paginação legacy
+- Documentação de fases de desenvolvimento
+
+### 🛠️ `/guides` - Guias Específicos
+
+**Guias práticos para tarefas específicas**
 
 | Documento | Descrição | Status |
 |-----------|-----------|--------|
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | Arquitetura completa com diagramas Mermaid | ✅ Completo |
-| [ARCHITECTURE_COMPARISON.md](./ARCHITECTURE_COMPARISON.md) | Comparação: antes vs depois | ✅ Completo |
+| [EVENTS_GUIDE.md](./guides/EVENTS_GUIDE.md) | Sistema de eventos type-safe | ✅ |
+| [CODE_EXAMPLES.md](./guides/CODE_EXAMPLES.md) | Exemplos práticos de código | ✅ |
+| [QUICKSTART.md](./guides/QUICKSTART.md) | Início rápido | ✅ |
 
-### 📦 Guias de Desenvolvimento
+### 📚 Documentos de Referência
 
-| Documento | Descrição | Linhas | Status |
-|-----------|-----------|--------|--------|
-| [MODULE_CREATION_GUIDE.md](./MODULE_CREATION_GUIDE.md) | Tutorial: criar novo módulo (12 passos + exemplo Category) | 1500+ | ✅ Completo |
-| [guides/EVENTS_GUIDE.md](./guides/EVENTS_GUIDE.md) | Sistema de eventos type-safe | 800+ | ✅ Completo |
-| [guides/CODE_EXAMPLES.md](./guides/CODE_EXAMPLES.md) | Exemplos práticos de código | 400+ | ✅ Completo |
-| [guides/QUICKSTART.md](./guides/QUICKSTART.md) | Início rápido | 200+ | ✅ Completo |
-| [guides/FILE_STRUCTURE.md](./guides/FILE_STRUCTURE.md) | Estrutura detalhada de arquivos | 300+ | ✅ Completo |
+| Documento | Descrição | Status |
+|-----------|-----------|--------|
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | Arquitetura detalhada com diagramas | ✅ |
+| [MODULE_CREATION_GUIDE.md](./MODULE_CREATION_GUIDE.md) | Criar novos módulos | ✅ |
+| [DEPLOYMENT.md](./DEPLOYMENT.md) | Guia de deployment | ✅ |
 
-### 🌐 API Documentation (Swagger/OpenAPI)
+---
+
+## 🎓 Trilhas de Aprendizado
+
+### Para Novos Desenvolvedores
+
+1. **Dia 1: Fundamentos**
+   - [Visão Geral](framework/01-overview.md)
+   - [Estrutura do Projeto](framework/03-project-structure.md)
+   - [Arquitetura Geral](framework/04-architecture.md)
+
+2. **Dia 2: Prática**
+   - [Guia de Início Rápido](framework/02-quickstart.md)
+   - [Criando um Módulo](framework/12-creating-modules.md)
+
+3. **Dia 3: Aprofundamento**
+   - [Padrão CQRS](framework/05-cqrs-pattern.md)
+   - [Sistema de Eventos](framework/08-events-system.md)
+   - [Boas Práticas](framework/23-best-practices.md)
+
+### Para Arquitetos
+
+1. [Arquitetura Completa](framework/04-architecture.md)
+2. [ADRs](adr/README.md)
+3. [Sistema de Módulos](framework/06-modules-system.md)
+4. [Dependency Injection](framework/07-dependency-injection.md)
+
+### Para DevOps
+
+1. [Deployment Guide](DEPLOYMENT.md)
+2. [Configuração](framework/16-configuration-bootstrap.md)
+3. [Testes](framework/21-testing-strategy.md)
+
+---
+
+## 🌐 API Documentation (Swagger/OpenAPI)
 
 | Recurso | Descrição | Status |
 |---------|-----------|--------|

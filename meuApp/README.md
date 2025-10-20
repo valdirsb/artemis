@@ -1,34 +1,135 @@
-# meuApp - Artemis Framework
+# 🏛️ Artemis Framework
 
-> 🎉 **Status:** Arquitetura Clean/Hexagonal implementada - Fase 2 completa (53%)
+<div align="center">
 
-Sistema modular seguindo princípios de Clean Architecture, Hexagonal Architecture e Domain-Driven Design.
+![Artemis Framework](https://img.shields.io/badge/Artemis-Framework-blue)
+![Version](https://img.shields.io/badge/version-1.0.0-green)
+![Go](https://img.shields.io/badge/Go-1.21+-00ADD8?logo=go)
+![Architecture](https://img.shields.io/badge/Architecture-Clean%20%7C%20Hexagonal%20%7C%20DDD-orange)
+
+**Framework modular para desenvolvimento de aplicações Go enterprise**
+
+[📚 Documentação Completa](docs/framework/README.md) • [🚀 Início Rápido](docs/framework/02-quickstart.md) • [🏗️ Arquitetura](docs/framework/04-architecture.md)
+
+</div>
 
 ---
 
-## 🏗️ Arquitetura Atual
+## 🎯 O que é o Artemis?
 
-### ✅ Implementado (Fases 1 e 2)
+O **Artemis Framework** é um framework empresarial em Go que implementa Clean Architecture, Hexagonal Architecture (Ports & Adapters), Domain-Driven Design (DDD) e CQRS. Ele fornece uma base sólida e padronizada para desenvolvimento de aplicações complexas e escaláveis.
 
-- **Hexagonal Architecture (Ports & Adapters)**
-  - ✅ Separação clara entre domínio e infraestrutura
-  - ✅ Ports primários (services) e secundários (repositories)
-  - ✅ Adapters para HTTP, gRPC, Database
-  
-- **Domain-Driven Design**
-  - ✅ Entidades de domínio independentes (User, Product, Order)
-  - ✅ Value Objects (OrderStatus)
-  - ✅ Agregados (Order + OrderItems)
-  
-- **Modularização Completa**
-  - ✅ Cada módulo com domain, ports, dto, repository, service, handler
-  - ✅ Sem dependências circulares
-  - ✅ Database models isolados nos repositórios
-  
-- **DTOs e Type Safety**
-  - ✅ Requests/Responses separados do domínio
-  - ✅ Mappers entre camadas
-  - ✅ Validações com struct tags
+### ⭐ Principais Características
+
+✅ **Clean Architecture** - Separação clara de responsabilidades  
+✅ **Modular** - Sistema de módulos auto-registráveis  
+✅ **CQRS** - Separação entre Commands e Queries  
+✅ **DI Container** - Injeção de dependências poderosa  
+✅ **Multi-Protocol** - HTTP (REST) e gRPC nativos  
+✅ **Event-Driven** - Sistema de eventos assíncrono  
+✅ **Type-Safe** - Forte tipagem em todas as camadas  
+✅ **Testável** - Arquitetura facilita testes em todos os níveis  
+
+---
+
+## 🚀 Início Rápido
+
+### Instalação
+
+```bash
+# Clone o repositório
+git clone https://github.com/sua-agencia/artemis.git meu-projeto
+cd meu-projeto
+
+# Configure o ambiente
+cp .env.example .env
+
+# Instale dependências
+go mod download
+
+# Execute migrações
+make migrate
+
+# Inicie a aplicação
+go run main.go
+```
+
+### Primeiro Módulo
+
+```bash
+# Crie um novo módulo
+make module name=blog
+
+# Estrutura criada:
+# internal/modules/blog/
+#   ├── domain/
+#   ├── application/
+#   ├── adapters/
+#   └── repository/
+```
+
+👉 **[Veja o tutorial completo →](docs/framework/02-quickstart.md)**
+
+---
+
+## 📚 Documentação
+
+### 🎓 Para Iniciantes
+
+- **[Visão Geral do Framework](docs/framework/01-overview.md)** - Conceitos e filosofia
+- **[Guia de Início Rápido](docs/framework/02-quickstart.md)** - Crie seu primeiro módulo
+- **[Estrutura do Projeto](docs/framework/03-project-structure.md)** - Organização de pastas
+
+### 🏗️ Arquitetura
+
+- **[Arquitetura Geral](docs/framework/04-architecture.md)** - Clean Architecture e DDD
+- **[Padrão CQRS](docs/framework/05-cqrs-pattern.md)** - Commands e Queries
+- **[Sistema de Módulos](docs/framework/06-modules-system.md)** - Módulos auto-registráveis
+- **[Dependency Injection](docs/framework/07-dependency-injection.md)** - Container DI
+
+### 🔧 Componentes
+
+- **[Sistema de Eventos](docs/framework/08-events-system.md)** - Event Bus e Domain Events
+- **[Adapters](docs/framework/09-adapters.md)** - HTTP, gRPC, Database
+- **[Contratos e Interfaces](docs/framework/10-contracts-interfaces.md)** - Ports & Adapters
+
+### 📖 Guias Práticos
+
+- **[Criando um Módulo](docs/framework/12-creating-modules.md)** - Tutorial completo
+- **[Implementando Commands](docs/framework/13-implementing-commands.md)** - Write operations
+- **[Implementando Queries](docs/framework/14-implementing-queries.md)** - Read operations
+
+### 🎯 Boas Práticas
+
+- **[Boas Práticas](docs/framework/23-best-practices.md)** - Convenções e recomendações
+- **[Estratégia de Testes](docs/framework/21-testing-strategy.md)** - Testes eficazes
+
+---
+
+## 🏛️ Arquitetura
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Presentation Layer                       │
+│              (HTTP Handlers, gRPC Services)                  │
+├─────────────────────────────────────────────────────────────┤
+│                    Application Layer                         │
+│        (Commands, Queries, Application Services)             │
+├─────────────────────────────────────────────────────────────┤
+│                      Domain Layer                            │
+│         (Entities, Value Objects, Domain Events)             │
+├─────────────────────────────────────────────────────────────┤
+│                   Infrastructure Layer                       │
+│     (Repositories, Event Bus, External Services)             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Princípios Fundamentais
+
+- **Inversão de Dependências** - Dependa de abstrações
+- **Separação de Responsabilidades** - Cada camada tem seu papel
+- **Modularidade** - Módulos independentes e desacoplados
+- **Testabilidade** - Fácil testar em todos os níveis
 
 ---
 
@@ -36,71 +137,207 @@ Sistema modular seguindo princípios de Clean Architecture, Hexagonal Architectu
 
 ```
 meuApp/
+├── docs/
+│   └── framework/         # 📚 DOCUMENTAÇÃO COMPLETA
+│       ├── README.md      # Índice da documentação
+│       ├── 01-overview.md
+│       ├── 02-quickstart.md
+│       └── ...
+│
 ├── internal/
-│   ├── modules/
-│   │   ├── user/          # Módulo de Usuários
-│   │   │   ├── domain/    # Entidades, Value Objects
-│   │   │   ├── ports/     # Interfaces (Primary + Secondary)
-│   │   │   ├── dto/       # Requests, Responses, Mappers
-│   │   │   ├── repository/# Adapter Database + Models
-│   │   │   ├── service/   # Implementação Ports
-│   │   │   └── handler/   # Adapter HTTP/gRPC
-│   │   ├── product/       # Módulo de Produtos
-│   │   └── order/         # Módulo de Pedidos
-│   ├── bootstrap/         # DI Container Setup
-│   └── routes/            # Routing Configuration
-├── pkg/
-│   ├── adapters/          # Adapters compartilhados
-│   │   ├── database/
-│   │   ├── logger/
-│   │   └── http/middleware/
-│   ├── config/            # Configuration
-│   ├── container/         # DI Container
-│   ├── contracts/         # Interfaces compartilhadas
-│   ├── events/            # Event Bus
-│   ├── framework/         # Framework providers
-│   └── proto/             # Protocol Buffers
-└── docs/                  # Documentação completa
+│   ├── bootstrap/         # Inicialização e DI
+│   └── modules/           # Módulos da aplicação
+│       ├── user/
+│       ├── product/
+│       └── order/
+│
+├── pkg/                   # Código compartilhável
+│   ├── adapters/         # Database, HTTP, Logger
+│   ├── container/        # DI Container + Registry
+│   ├── contracts/        # Interfaces
+│   ├── events/           # Event Bus
+│   └── framework/        # Core do framework
+│
+├── proto/                # Protocol Buffers
+├── tests/                # Testes E2E
+├── framework.yaml        # Configuração do framework
+└── main.go              # Entry point
 ```
 
 ---
 
-## 🚀 Quick Start
+## 🔥 Recursos Principais
 
-### Pré-requisitos
-- Go 1.24+
-- MySQL 8.0+
+### 1. Sistema de Módulos Auto-Registráveis
 
-### Instalação
+Cada módulo se registra automaticamente no framework:
 
-```bash
-# Clone o repositório
-git clone <repo-url>
-cd meuApp
-
-# Instalar dependências
-go mod download
-
-# Configurar ambiente
-cp framework.yaml.example framework.yaml
-# Editar framework.yaml com suas configurações
-
-# Executar
-go run main.go
+```go
+func (m *UserModule) Register(registry *container.ModuleRegistry) error {
+    // Registra componentes automaticamente
+    registry.RegisterRepository("user", userRepo)
+    registry.RegisterApplicationService("user", userService)
+    registry.RegisterHTTPHandler("user", httpHandler)
+    return nil
+}
 ```
 
-### Desenvolvimento
+### 2. CQRS Pattern
+
+Separação clara entre leitura e escrita:
+
+```go
+// Commands (Write)
+type CreateUserCommand struct {
+    Name  string
+    Email string
+}
+
+// Queries (Read)
+type ListUsersQuery struct {
+    Page     int
+    PageSize int
+}
+```
+
+### 3. Event-Driven Architecture
+
+```go
+// Publicar eventos
+eventBus.Publish("user.created", UserCreatedEvent{
+    UserID: user.ID,
+    Email:  user.Email,
+})
+
+// Subscrever
+eventBus.Subscribe("user.created", func(event Event) error {
+    // Processar evento
+})
+```
+
+### 4. Multi-Protocol Support
+
+```yaml
+# framework.yaml
+protocols:
+  http: true    # REST API
+  grpc: true    # gRPC API
+```
+
+---
+
+## 🧪 Testes
+
+```bash
+# Testes unitários
+go test ./internal/modules/...
+
+# Testes de integração
+go test ./tests/integration/...
+
+# Testes E2E
+go test ./tests/e2e/...
+
+# Coverage
+go test -cover ./...
+```
+
+---
+
+## 📖 Exemplos
+
+### Criar um Usuário
+
+```bash
+curl -X POST http://localhost:8080/api/v1/users \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "John Doe",
+    "email": "john@example.com",
+    "password": "secret123"
+  }'
+```
+
+### Listar Usuários
+
+```bash
+curl http://localhost:8080/api/v1/users?page=1&page_size=20
+```
+
+---
+
+## �️ Comandos Úteis
 
 ```bash
 # Build
 make build
 
-# Testes
-go test ./...
+# Executar
+make run
 
-# Lint
-golangci-lint run
+# Testes
+make test
+
+# Migrações
+make migrate
+
+# Gerar código gRPC
+make proto
+
+# Limpar
+make clean
 ```
+
+---
+
+## 📚 Documentação Adicional
+
+- **[ADRs](docs/adr/README.md)** - Architecture Decision Records
+- **[Deployment](docs/DEPLOYMENT.md)** - Guia de deploy
+- **[API Reference](docs/framework/24-api-reference.md)** - Referência da API
+
+---
+
+## 🤝 Contribuindo
+
+Contribuições são bem-vindas! Por favor, leia nosso [guia de contribuição](CONTRIBUTING.md).
+
+1. Fork o projeto
+2. Crie uma branch (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
+
+---
+
+## 📄 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+
+---
+
+## 👥 Equipe
+
+Desenvolvido com ❤️ pela Equipe de Desenvolvimento da Agência
+
+---
+
+## 📞 Suporte
+
+- 📧 Email: devteam@sua-agencia.com
+- 💬 Slack: #artemis-framework
+- 📖 Wiki: [Documentação Completa](docs/framework/README.md)
+
+---
+
+<div align="center">
+
+**[⬆️ Voltar ao topo](#-artemis-framework)**
+
+**[📚 Documentação Completa](docs/framework/README.md)** | **[🚀 Início Rápido](docs/framework/02-quickstart.md)** | **[🏗️ Arquitetura](docs/framework/04-architecture.md)**
+
+</div>
+
 
 ---
 
