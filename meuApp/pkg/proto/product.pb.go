@@ -606,10 +606,11 @@ func (x *ListProductsRequest) GetPageSize() int32 {
 type ListProductsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Products      []*Product             `protobuf:"bytes,1,rep,name=products,proto3" json:"products,omitempty"`
-	Total         int32                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	TotalItems    int32                  `protobuf:"varint,2,opt,name=total_items,json=totalItems,proto3" json:"total_items,omitempty"`
 	Page          int32                  `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
 	PageSize      int32                  `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	Message       string                 `protobuf:"bytes,5,opt,name=message,proto3" json:"message,omitempty"`
+	TotalPages    int32                  `protobuf:"varint,5,opt,name=total_pages,json=totalPages,proto3" json:"total_pages,omitempty"`
+	Message       string                 `protobuf:"bytes,6,opt,name=message,proto3" json:"message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -651,9 +652,9 @@ func (x *ListProductsResponse) GetProducts() []*Product {
 	return nil
 }
 
-func (x *ListProductsResponse) GetTotal() int32 {
+func (x *ListProductsResponse) GetTotalItems() int32 {
 	if x != nil {
-		return x.Total
+		return x.TotalItems
 	}
 	return 0
 }
@@ -668,6 +669,13 @@ func (x *ListProductsResponse) GetPage() int32 {
 func (x *ListProductsResponse) GetPageSize() int32 {
 	if x != nil {
 		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListProductsResponse) GetTotalPages() int32 {
+	if x != nil {
+		return x.TotalPages
 	}
 	return 0
 }
@@ -783,13 +791,16 @@ const file_proto_product_proto_rawDesc = "" +
 	"\amessage\x18\x01 \x01(\tR\amessage\"F\n" +
 	"\x13ListProductsRequest\x12\x12\n" +
 	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\"\xa1\x01\n" +
+	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\"\xcd\x01\n" +
 	"\x14ListProductsResponse\x12(\n" +
-	"\bproducts\x18\x01 \x03(\v2\f.api.ProductR\bproducts\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x05R\x05total\x12\x12\n" +
+	"\bproducts\x18\x01 \x03(\v2\f.api.ProductR\bproducts\x12\x1f\n" +
+	"\vtotal_items\x18\x02 \x01(\x05R\n" +
+	"totalItems\x12\x12\n" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\x12\x18\n" +
-	"\amessage\x18\x05 \x01(\tR\amessage\"^\n" +
+	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\x12\x1f\n" +
+	"\vtotal_pages\x18\x05 \x01(\x05R\n" +
+	"totalPages\x12\x18\n" +
+	"\amessage\x18\x06 \x01(\tR\amessage\"^\n" +
 	"\x15SearchProductsRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x12\n" +
 	"\x04page\x18\x02 \x01(\x05R\x04page\x12\x1b\n" +

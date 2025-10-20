@@ -127,7 +127,7 @@ func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 
 // GetProducts godoc
 // @Summary List all products
-// @Description Get a list of products with optional filters
+// @Description Get a list of products with optional filters and pagination
 // @Tags products
 // @Accept json
 // @Produce json
@@ -135,7 +135,9 @@ func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 // @Param min_price query number false "Minimum price filter"
 // @Param max_price query number false "Maximum price filter"
 // @Param in_stock query boolean false "Filter only products in stock"
-// @Success 200 {array} dto.ProductResponse
+// @Param page query int false "Page number (default: 1)"
+// @Param page_size query int false "Items per page (default: 10)"
+// @Success 200 {object} dto.PaginatedProductResponse
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /api/v1/products [get]
 func (h *ProductHandler) GetProducts(c *gin.Context) {
@@ -163,13 +165,30 @@ func (h *ProductHandler) GetProducts(c *gin.Context) {
 		filters.InStock = &inStock
 	}
 
-	products, err := h.productService.ListProducts(c.Request.Context(), filters)
+	// Parse pagination parameters
+	page := 1
+	if pageStr := c.Query("page"); pageStr != "" {
+		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+			page = p
+		}
+	}
+	filters.Page = page
+
+	pageSize := 10
+	if pageSizeStr := c.Query("page_size"); pageSizeStr != "" {
+		if ps, err := strconv.Atoi(pageSizeStr); err == nil && ps > 0 {
+			pageSize = ps
+		}
+	}
+	filters.PageSize = pageSize
+
+	result, err := h.productService.ListProductsPaginated(c.Request.Context(), filters)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	response := dto.ToProductResponseList(products)
+	response := dto.ToPaginatedProductResponse(result)
 	c.JSON(http.StatusOK, response)
 }
 

@@ -51,7 +51,7 @@ type Database interface {
 type Transaction interface {
 	Commit() error
 	Rollback() error
-	UserRepository() UserRepository
-	ProductRepository() ProductRepository
-	OrderRepository() OrderRepository
+	// UserRepository() UserRepository
+	// ProductRepository() ProductRepository
+	// OrderRepository() OrderRepository
 }

@@ -145,13 +145,27 @@ func (s *ProductGRPCHandler) DeleteProduct(ctx context.Context, req *pb.DeletePr
 // ListProducts lists products (simplified - no filters)
 func (s *ProductGRPCHandler) ListProducts(ctx context.Context, req *pb.ListProductsRequest) (*pb.ListProductsResponse, error) {
 	filters := ports.ProductFilters{}
-	products, err := s.productService.ListProducts(ctx, filters)
+
+	// Parse pagination parameters
+	page := 1
+	if pageStr := req.Page; pageStr > 0 {
+		page = int(pageStr)
+	}
+	filters.Page = page
+
+	pageSize := 10
+	if pageSizeStr := req.PageSize; pageSizeStr > 0 {
+		pageSize = int(pageSizeStr)
+	}
+	filters.PageSize = pageSize
+
+	productsPaginated, err := s.productService.ListProductsPaginated(ctx, filters)
 	if err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to list products: %v", err))
 	}
 
 	var protoProducts []*pb.Product
-	for _, product := range products {
+	for _, product := range productsPaginated.Items {
 		productResponse := dto.ToProductResponse(product)
 		protoProducts = append(protoProducts, &pb.Product{
 			Id:          productResponse.ID,
@@ -165,8 +179,11 @@ func (s *ProductGRPCHandler) ListProducts(ctx context.Context, req *pb.ListProdu
 	}
 
 	return &pb.ListProductsResponse{
-		Products: protoProducts,
-		Total:    int32(len(protoProducts)),
-		Message:  "Products retrieved successfully",
+		Products:   protoProducts,
+		TotalItems: int32(productsPaginated.TotalItems),
+		Page:       int32(productsPaginated.Page),
+		PageSize:   int32(productsPaginated.PageSize),
+		TotalPages: int32(productsPaginated.TotalPages),
+		Message:    "Products retrieved successfully",
 	}, nil
 }

@@ -100,3 +100,69 @@ func (r *MySQLProductRepository) List(ctx context.Context, filters ports.Product
 
 	return products, nil
 }
+
+// ListPaginated lista produtos com filtros e paginação
+func (r *MySQLProductRepository) ListPaginated(ctx context.Context, filters ports.ProductFilters) (*ports.PaginatedResult, error) {
+	query := r.db.WithContext(ctx).Model(&ProductModel{})
+
+	// Aplicar filtros
+	if filters.CategoryID != nil {
+		query = query.Where("category_id = ?", *filters.CategoryID)
+	}
+
+	if filters.MinPrice != nil {
+		query = query.Where("price >= ?", *filters.MinPrice)
+	}
+
+	if filters.MaxPrice != nil {
+		query = query.Where("price <= ?", *filters.MaxPrice)
+	}
+
+	if filters.InStock != nil && *filters.InStock {
+		query = query.Where("stock > 0")
+	}
+
+	// Contar total de registros
+	var totalItems int64
+	if err := query.Count(&totalItems).Error; err != nil {
+		return nil, fmt.Errorf("failed to count products: %w", err)
+	}
+
+	// Aplicar paginação
+	page := filters.Page
+	if page < 1 {
+		page = 1
+	}
+
+	pageSize := filters.PageSize
+	if pageSize < 1 {
+		pageSize = 10 // valor padrão
+	}
+
+	offset := (page - 1) * pageSize
+
+	var productModels []ProductModel
+	if err := query.Limit(pageSize).Offset(offset).Find(&productModels).Error; err != nil {
+		return nil, fmt.Errorf("failed to list products: %w", err)
+	}
+
+	// Converter models para domain
+	products := make([]*domain.Product, len(productModels))
+	for i, model := range productModels {
+		products[i] = model.ToDomain()
+	}
+
+	// Calcular total de páginas
+	totalPages := int(totalItems) / pageSize
+	if int(totalItems)%pageSize != 0 {
+		totalPages++
+	}
+
+	return &ports.PaginatedResult{
+		Items:      products,
+		TotalItems: totalItems,
+		Page:       page,
+		PageSize:   pageSize,
+		TotalPages: totalPages,
+	}, nil
+}
