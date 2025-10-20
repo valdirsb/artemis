@@ -141,13 +141,44 @@ func (s *UserGRPCHandler) DeleteUser(ctx context.Context, req *pb.DeleteUserRequ
 
 // ListUsers lists users with pagination
 func (s *UserGRPCHandler) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (*pb.ListUsersResponse, error) {
-	// Para simplificar, vamos retornar apenas uma resposta vazia por enquanto
-	// Em uma implementação real, você criaria um método no repository para paginação
+	// Parse pagination parameters
+	page := 1
+	if req.Page > 0 {
+		page = int(req.Page)
+	}
+
+	pageSize := 10
+	if req.PageSize > 0 {
+		pageSize = int(req.PageSize)
+	}
+	if pageSize > 100 {
+		pageSize = 100
+	}
+
+	// Call service with pagination
+	usersPaginated, err := s.userService.ListUsers(ctx, page, pageSize)
+	if err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to list users: %v", err))
+	}
+
+	// Convert to proto messages
+	var protoUsers []*pb.User
+	for _, user := range usersPaginated.Items {
+		userResponse := dto.ToUserResponse(user)
+		protoUsers = append(protoUsers, &pb.User{
+			Id:        userResponse.ID,
+			Name:      userResponse.Username,
+			Email:     userResponse.Email,
+			CreatedAt: userResponse.CreatedAt.Format(time.RFC3339),
+			UpdatedAt: userResponse.UpdatedAt.Format(time.RFC3339),
+		})
+	}
+
 	return &pb.ListUsersResponse{
-		Users:    []*pb.User{},
-		Total:    0,
-		Page:     req.Page,
-		PageSize: req.PageSize,
+		Users:    protoUsers,
+		Total:    int32(usersPaginated.TotalItems),
+		Page:     int32(usersPaginated.Page),
+		PageSize: int32(usersPaginated.PageSize),
 		Message:  "Users retrieved successfully",
 	}, nil
 }

@@ -136,18 +136,31 @@ func (s *OrderGRPCHandler) UpdateOrderStatus(ctx context.Context, req *pb.Update
 	}, nil
 }
 
-func (s *OrderGRPCHandler) GetOrdersByUser(ctx context.Context, req *pb.GetOrdersByUserRequest) (*pb.ListOrdersResponse, error) {
-	if req.UserId == "" {
-		return nil, status.Error(codes.InvalidArgument, "user_id is required")
+// ListOrders lists all orders with pagination
+func (s *OrderGRPCHandler) ListOrders(ctx context.Context, req *pb.ListOrdersRequest) (*pb.ListOrdersResponse, error) {
+	// Parse pagination parameters
+	page := 1
+	if req.Page > 0 {
+		page = int(req.Page)
 	}
 
-	orders, err := s.orderService.GetOrdersByUserID(ctx, req.UserId)
+	pageSize := 10
+	if req.PageSize > 0 {
+		pageSize = int(req.PageSize)
+	}
+	if pageSize > 100 {
+		pageSize = 100
+	}
+
+	// Call service with pagination
+	ordersPaginated, err := s.orderService.ListOrders(ctx, page, pageSize)
 	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get orders: %v", err))
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to list orders: %v", err))
 	}
 
+	// Convert to proto messages
 	var protoOrders []*pb.Order
-	for _, order := range orders {
+	for _, order := range ordersPaginated.Items {
 		orderResponse := dto.ToOrderResponse(order)
 		protoOrder := &pb.Order{
 			Id:         orderResponse.ID,
@@ -170,7 +183,69 @@ func (s *OrderGRPCHandler) GetOrdersByUser(ctx context.Context, req *pb.GetOrder
 	}
 
 	return &pb.ListOrdersResponse{
-		Orders:  protoOrders,
-		Message: "Orders retrieved successfully",
+		Orders:   protoOrders,
+		Total:    int32(ordersPaginated.TotalItems),
+		Page:     int32(ordersPaginated.Page),
+		PageSize: int32(ordersPaginated.PageSize),
+		Message:  "Orders retrieved successfully",
+	}, nil
+}
+
+// GetOrdersByUser gets orders for a specific user with pagination
+func (s *OrderGRPCHandler) GetOrdersByUser(ctx context.Context, req *pb.GetOrdersByUserRequest) (*pb.ListOrdersResponse, error) {
+	if req.UserId == "" {
+		return nil, status.Error(codes.InvalidArgument, "user_id is required")
+	}
+
+	// Parse pagination parameters
+	page := 1
+	if req.Page > 0 {
+		page = int(req.Page)
+	}
+
+	pageSize := 10
+	if req.PageSize > 0 {
+		pageSize = int(req.PageSize)
+	}
+	if pageSize > 100 {
+		pageSize = 100
+	}
+
+	// Call service with pagination
+	ordersPaginated, err := s.orderService.GetOrdersByUserIDPaginated(ctx, req.UserId, page, pageSize)
+	if err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get orders: %v", err))
+	}
+
+	// Convert to proto messages
+	var protoOrders []*pb.Order
+	for _, order := range ordersPaginated.Items {
+		orderResponse := dto.ToOrderResponse(order)
+		protoOrder := &pb.Order{
+			Id:         orderResponse.ID,
+			UserId:     orderResponse.UserID,
+			TotalPrice: orderResponse.Total,
+			Status:     orderResponse.Status,
+			CreatedAt:  orderResponse.CreatedAt.Format(time.RFC3339),
+			UpdatedAt:  orderResponse.UpdatedAt.Format(time.RFC3339),
+		}
+
+		for _, item := range orderResponse.Items {
+			protoOrder.Items = append(protoOrder.Items, &pb.OrderItem{
+				ProductId: item.ProductID,
+				Quantity:  int32(item.Quantity),
+				Price:     item.Price,
+			})
+		}
+
+		protoOrders = append(protoOrders, protoOrder)
+	}
+
+	return &pb.ListOrdersResponse{
+		Orders:   protoOrders,
+		Total:    int32(ordersPaginated.TotalItems),
+		Page:     int32(ordersPaginated.Page),
+		PageSize: int32(ordersPaginated.PageSize),
+		Message:  "Orders retrieved successfully",
 	}, nil
 }

@@ -2,6 +2,7 @@ package http
 
 import (
 	"net/http"
+	"strconv"
 
 	"meuApp/internal/modules/order/domain"
 	"meuApp/internal/modules/order/dto"
@@ -77,25 +78,42 @@ func (h *OrderHandler) GetOrder(c *gin.Context) {
 
 // GetOrdersByUser godoc
 // @Summary Get orders by user ID
-// @Description Get all orders for a specific user
+// @Description Get all orders for a specific user with pagination
 // @Tags orders
 // @Accept json
 // @Produce json
 // @Param user_id path string true "User ID"
-// @Success 200 {array} dto.OrderResponse
+// @Param page query int false "Page number" default(1)
+// @Param page_size query int false "Items per page" default(10)
+// @Success 200 {object} dto.PaginatedOrderResponse
+// @Failure 400 {object} map[string]string "Invalid pagination parameters"
 // @Failure 404 {object} map[string]string "User not found"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /api/v1/orders/user/{user_id} [get]
 func (h *OrderHandler) GetOrdersByUser(c *gin.Context) {
 	userID := c.Param("user_id")
 
-	orders, err := h.orderService.GetOrdersByUserID(c.Request.Context(), userID)
+	// Parse pagination parameters
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	pageSize, err := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	if err != nil || pageSize < 1 {
+		pageSize = 10
+	}
+	if pageSize > 100 {
+		pageSize = 100
+	}
+
+	result, err := h.orderService.GetOrdersByUserIDPaginated(c.Request.Context(), userID, page, pageSize)
 	if err != nil {
 		middleware.RespondWithAppError(c.Writer, err)
 		return
 	}
 
-	response := dto.ToOrderResponseList(orders)
+	response := dto.ToPaginatedOrderResponse(result)
 	middleware.RespondWithJSON(c.Writer, http.StatusOK, response)
 }
 
@@ -154,4 +172,41 @@ func (h *OrderHandler) CancelOrder(c *gin.Context) {
 	}
 
 	middleware.RespondWithJSON(c.Writer, http.StatusOK, gin.H{"message": "Order cancelled successfully"})
+}
+
+// ListOrders godoc
+// @Summary List all orders
+// @Description Get a paginated list of orders
+// @Tags orders
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number (default: 1)"
+// @Param page_size query int false "Items per page (default: 10, max: 100)"
+// @Success 200 {object} dto.PaginatedOrderResponse
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /api/v1/orders [get]
+func (h *OrderHandler) ListOrders(c *gin.Context) {
+	// Parse pagination parameters
+	page := 1
+	if pageStr := c.Query("page"); pageStr != "" {
+		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+			page = p
+		}
+	}
+
+	pageSize := 10
+	if pageSizeStr := c.Query("page_size"); pageSizeStr != "" {
+		if ps, err := strconv.Atoi(pageSizeStr); err == nil && ps > 0 {
+			pageSize = ps
+		}
+	}
+
+	result, err := h.orderService.ListOrders(c.Request.Context(), page, pageSize)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	response := dto.ToPaginatedOrderResponse(result)
+	c.JSON(http.StatusOK, response)
 }

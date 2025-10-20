@@ -18,7 +18,10 @@ service OrderService {
   // Delete order
   rpc DeleteOrder(DeleteOrderRequest) returns (DeleteOrderResponse);
   
-  // Get orders by user
+  // List all orders with pagination
+  rpc ListOrders(ListOrdersRequest) returns (ListOrdersResponse);
+  
+  // Get orders by user with pagination
   rpc GetOrdersByUser(GetOrdersByUserRequest) returns (ListOrdersResponse);
 }
 
@@ -83,6 +86,12 @@ message DeleteOrderRequest {
 
 message DeleteOrderResponse {
   string message = 1;
+}
+
+// List Orders
+message ListOrdersRequest {
+  int32 page = 1;
+  int32 page_size = 2;
 }
 
 message ListOrdersResponse {

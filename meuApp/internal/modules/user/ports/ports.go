@@ -16,6 +16,7 @@ type UserService interface {
 	UpdateUser(ctx context.Context, id string, username, email *string) (*domain.User, error)
 	DeleteUser(ctx context.Context, id string) error
 	ValidateCredentials(ctx context.Context, email, password string) (*domain.User, error)
+	ListUsers(ctx context.Context, page, pageSize int) (*PaginatedUserResult, error)
 }
 
 // ===== SECONDARY PORTS (Adapters/Dependencies) =====
@@ -26,8 +27,18 @@ type UserRepository interface {
 	GetByID(ctx context.Context, id string) (*domain.User, error)
 	GetByEmail(ctx context.Context, email string) (*domain.User, error)
 	List(ctx context.Context, offset, limit int) ([]*domain.User, error)
+	ListPaginated(ctx context.Context, page, pageSize int) (*PaginatedUserResult, error)
 	Update(ctx context.Context, user *domain.User) error
 	Delete(ctx context.Context, id string) error
+}
+
+// PaginatedUserResult representa um resultado paginado de usuários
+type PaginatedUserResult struct {
+	Items      []*domain.User
+	TotalItems int64
+	Page       int
+	PageSize   int
+	TotalPages int
 }
 
 // PasswordHasher define a interface para hashing de senhas

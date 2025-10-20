@@ -74,6 +74,57 @@ func (r *mysqlOrderRepository) GetByUserID(ctx context.Context, userID string) (
 	return orders, nil
 }
 
+// GetByUserIDPaginated busca pedidos de um usuário com paginação
+func (r *mysqlOrderRepository) GetByUserIDPaginated(ctx context.Context, userID string, page, pageSize int) (*ports.PaginatedOrderResult, error) {
+	query := r.db.WithContext(ctx).Model(&OrderModel{}).Where("user_id = ?", userID)
+
+	// Contar total de registros do usuário
+	var totalItems int64
+	if err := query.Count(&totalItems).Error; err != nil {
+		return nil, fmt.Errorf("failed to count user orders: %w", err)
+	}
+
+	// Aplicar valores padrão
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 10
+	}
+
+	offset := (page - 1) * pageSize
+
+	var orderModels []OrderModel
+	if err := query.
+		Preload("Items").
+		Offset(offset).
+		Limit(pageSize).
+		Order("created_at DESC").
+		Find(&orderModels).Error; err != nil {
+		return nil, fmt.Errorf("failed to list user orders: %w", err)
+	}
+
+	// Converter models para domain
+	orders := make([]*domain.Order, len(orderModels))
+	for i, model := range orderModels {
+		orders[i] = model.ToDomain()
+	}
+
+	// Calcular total de páginas
+	totalPages := int(totalItems) / pageSize
+	if int(totalItems)%pageSize != 0 {
+		totalPages++
+	}
+
+	return &ports.PaginatedOrderResult{
+		Items:      orders,
+		TotalItems: totalItems,
+		Page:       page,
+		PageSize:   pageSize,
+		TotalPages: totalPages,
+	}, nil
+}
+
 // Update atualiza um pedido existente
 func (r *mysqlOrderRepository) Update(ctx context.Context, order *domain.Order) error {
 	orderModel := &OrderModel{}
@@ -136,4 +187,55 @@ func (r *mysqlOrderRepository) Delete(ctx context.Context, id string) error {
 	})
 
 	return err
+}
+
+// ListPaginated lista pedidos com paginação
+func (r *mysqlOrderRepository) ListPaginated(ctx context.Context, page, pageSize int) (*ports.PaginatedOrderResult, error) {
+	query := r.db.WithContext(ctx).Model(&OrderModel{})
+
+	// Contar total de registros
+	var totalItems int64
+	if err := query.Count(&totalItems).Error; err != nil {
+		return nil, fmt.Errorf("failed to count orders: %w", err)
+	}
+
+	// Aplicar valores padrão
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 10
+	}
+
+	offset := (page - 1) * pageSize
+
+	var orderModels []OrderModel
+	if err := query.
+		Preload("Items").
+		Offset(offset).
+		Limit(pageSize).
+		Order("created_at DESC").
+		Find(&orderModels).Error; err != nil {
+		return nil, fmt.Errorf("failed to list orders: %w", err)
+	}
+
+	// Converter models para domain
+	orders := make([]*domain.Order, len(orderModels))
+	for i, model := range orderModels {
+		orders[i] = model.ToDomain()
+	}
+
+	// Calcular total de páginas
+	totalPages := int(totalItems) / pageSize
+	if int(totalItems)%pageSize != 0 {
+		totalPages++
+	}
+
+	return &ports.PaginatedOrderResult{
+		Items:      orders,
+		TotalItems: totalItems,
+		Page:       page,
+		PageSize:   pageSize,
+		TotalPages: totalPages,
+	}, nil
 }

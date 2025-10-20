@@ -86,6 +86,7 @@ func (m *OrderModule) Register(registry *container.ModuleRegistry) error {
 	// 4. Criar Query Handlers
 	getOrderHandler := queries.NewGetOrderHandler(orderRepo, m.logger)
 	getOrdersByUserHandler := queries.NewGetOrdersByUserHandler(orderRepo, m.logger)
+	listOrdersHandler := queries.NewListOrdersHandler(orderRepo, m.logger)
 
 	// 5. Registrar Application Service
 	orderAppService := services.NewOrderApplicationService(
@@ -94,6 +95,7 @@ func (m *OrderModule) Register(registry *container.ModuleRegistry) error {
 		cancelOrderHandler,
 		getOrderHandler,
 		getOrdersByUserHandler,
+		listOrdersHandler,
 	)
 	registry.RegisterApplicationService("order", orderAppService)
 

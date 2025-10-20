@@ -112,3 +112,53 @@ func (r *mysqlUserRepository) Delete(ctx context.Context, id string) error {
 
 	return nil
 }
+
+// ListPaginated lista usuários com paginação
+func (r *mysqlUserRepository) ListPaginated(ctx context.Context, page, pageSize int) (*ports.PaginatedUserResult, error) {
+	query := r.db.WithContext(ctx).Model(&UserModel{})
+
+	// Contar total de registros
+	var totalItems int64
+	if err := query.Count(&totalItems).Error; err != nil {
+		return nil, fmt.Errorf("failed to count users: %w", err)
+	}
+
+	// Aplicar valores padrão
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 10
+	}
+
+	offset := (page - 1) * pageSize
+
+	var userModels []UserModel
+	if err := query.
+		Offset(offset).
+		Limit(pageSize).
+		Order("created_at DESC").
+		Find(&userModels).Error; err != nil {
+		return nil, fmt.Errorf("failed to list users: %w", err)
+	}
+
+	// Converter models para domain
+	users := make([]*domain.User, len(userModels))
+	for i, model := range userModels {
+		users[i] = model.ToDomain()
+	}
+
+	// Calcular total de páginas
+	totalPages := int(totalItems) / pageSize
+	if int(totalItems)%pageSize != 0 {
+		totalPages++
+	}
+
+	return &ports.PaginatedUserResult{
+		Items:      users,
+		TotalItems: totalItems,
+		Page:       page,
+		PageSize:   pageSize,
+		TotalPages: totalPages,
+	}, nil
+}

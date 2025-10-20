@@ -2,6 +2,7 @@ package http
 
 import (
 	"net/http"
+	"strconv"
 
 	"meuApp/internal/modules/user/dto"
 	"meuApp/internal/modules/user/ports"
@@ -158,4 +159,41 @@ func (h *UserHTTPHandler) ValidateUser(c *gin.Context) {
 	// Converter domain para DTO response
 	response := dto.ToUserResponse(user)
 	middleware.RespondWithJSON(c.Writer, http.StatusOK, response)
+}
+
+// ListUsers godoc
+// @Summary List all users
+// @Description Get a paginated list of users
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number (default: 1)"
+// @Param page_size query int false "Items per page (default: 10, max: 100)"
+// @Success 200 {object} dto.PaginatedUserResponse
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /api/v1/users [get]
+func (h *UserHTTPHandler) ListUsers(c *gin.Context) {
+	// Parse pagination parameters
+	page := 1
+	if pageStr := c.Query("page"); pageStr != "" {
+		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+			page = p
+		}
+	}
+
+	pageSize := 10
+	if pageSizeStr := c.Query("page_size"); pageSizeStr != "" {
+		if ps, err := strconv.Atoi(pageSizeStr); err == nil && ps > 0 {
+			pageSize = ps
+		}
+	}
+
+	result, err := h.userService.ListUsers(c.Request.Context(), page, pageSize)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	response := dto.ToPaginatedUserResponse(result)
+	c.JSON(http.StatusOK, response)
 }

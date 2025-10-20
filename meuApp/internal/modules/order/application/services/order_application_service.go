@@ -16,6 +16,7 @@ type OrderApplicationService struct {
 	cancelHandler          *commands.CancelOrderHandler
 	getOrderHandler        *queries.GetOrderHandler
 	getOrdersByUserHandler *queries.GetOrdersByUserHandler
+	listOrdersHandler      *queries.ListOrdersHandler
 }
 
 // NewOrderApplicationService cria uma nova instância do serviço de aplicação
@@ -25,6 +26,7 @@ func NewOrderApplicationService(
 	cancelHandler *commands.CancelOrderHandler,
 	getOrderHandler *queries.GetOrderHandler,
 	getOrdersByUserHandler *queries.GetOrdersByUserHandler,
+	listOrdersHandler *queries.ListOrdersHandler,
 ) *OrderApplicationService {
 	return &OrderApplicationService{
 		createHandler:          createHandler,
@@ -32,6 +34,7 @@ func NewOrderApplicationService(
 		cancelHandler:          cancelHandler,
 		getOrderHandler:        getOrderHandler,
 		getOrdersByUserHandler: getOrdersByUserHandler,
+		listOrdersHandler:      listOrdersHandler,
 	}
 }
 
@@ -64,6 +67,16 @@ func (s *OrderApplicationService) GetOrdersByUserID(ctx context.Context, userID 
 	return s.getOrdersByUserHandler.Handle(ctx, query)
 }
 
+// GetOrdersByUserIDPaginated busca pedidos de um usuário com paginação
+func (s *OrderApplicationService) GetOrdersByUserIDPaginated(ctx context.Context, userID string, page, pageSize int) (*ports.PaginatedOrderResult, error) {
+	query := queries.GetOrdersByUserQuery{
+		UserID:   userID,
+		Page:     page,
+		PageSize: pageSize,
+	}
+	return s.getOrdersByUserHandler.HandlePaginated(ctx, query)
+}
+
 // UpdateOrderStatus atualiza o status de um pedido
 func (s *OrderApplicationService) UpdateOrderStatus(ctx context.Context, id string, status domain.OrderStatus) error {
 	cmd := commands.UpdateOrderStatusCommand{
@@ -77,4 +90,13 @@ func (s *OrderApplicationService) UpdateOrderStatus(ctx context.Context, id stri
 func (s *OrderApplicationService) CancelOrder(ctx context.Context, id string) error {
 	cmd := commands.CancelOrderCommand{ID: id}
 	return s.cancelHandler.Handle(ctx, cmd)
+}
+
+// ListOrders lista pedidos com paginação
+func (s *OrderApplicationService) ListOrders(ctx context.Context, page, pageSize int) (*ports.PaginatedOrderResult, error) {
+	query := queries.ListOrdersQuery{
+		Page:     page,
+		PageSize: pageSize,
+	}
+	return s.listOrdersHandler.Handle(ctx, query)
 }
