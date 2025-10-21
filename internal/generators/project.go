@@ -34,43 +34,69 @@ func (g *ProjectGenerator) Generate(projectPath, projectName string) error {
 
 	// Estrutura de diretórios
 	dirs := []string{
+		// Internal structure
 		"internal/bootstrap",
-		"internal/modules",
-		"internal/modules/user/adapters/",
-		"internal/modules/user/domain/",
-		"internal/modules/user/handler/",
-		"internal/modules/user/ports/",
-		"internal/modules/user/repository/",
-		"internal/modules/user/service/",
-
-		"internal/modules/product/adapters/",
-		"internal/modules/product/domain/",
-		"internal/modules/product/handler/",
-		"internal/modules/product/ports/",
-		"internal/modules/product/repository/",
-		"internal/modules/product/service/",
-
-		"internal/modules/order/adapters/",
-		"internal/modules/order/domain/",
-		"internal/modules/order/handler/",
-		"internal/modules/order/ports/",
-		"internal/modules/order/repository/",
-		"internal/modules/order/service/",
-
 		"internal/routes",
-		"internal/shared/config",
-		"internal/shared/database",
-		"internal/shared/logger",
-		"internal/shared/middleware",
+		"internal/modules",
+
+		// User module
+		"internal/modules/user/adapters/grpc",
+		"internal/modules/user/adapters/http",
+		"internal/modules/user/application/commands",
+		"internal/modules/user/application/queries",
+		"internal/modules/user/application/services",
+		"internal/modules/user/domain",
+		"internal/modules/user/dto",
+		"internal/modules/user/ports",
+		"internal/modules/user/repository",
+		"internal/modules/user/tests",
+
+		// Product module
+		"internal/modules/product/adapters/grpc",
+		"internal/modules/product/adapters/http",
+		"internal/modules/product/application/commands",
+		"internal/modules/product/application/queries",
+		"internal/modules/product/application/services",
+		"internal/modules/product/domain",
+		"internal/modules/product/dto",
+		"internal/modules/product/ports",
+		"internal/modules/product/repository",
+		"internal/modules/product/tests",
+
+		// Order module
+		"internal/modules/order/adapters/grpc",
+		"internal/modules/order/adapters/http",
+		"internal/modules/order/application/commands",
+		"internal/modules/order/application/queries",
+		"internal/modules/order/application/services",
+		"internal/modules/order/domain",
+		"internal/modules/order/dto",
+		"internal/modules/order/ports",
+		"internal/modules/order/repository",
+		"internal/modules/order/tests",
+
+		// Pkg structure
+		"pkg/adapters/database/mysql",
+		"pkg/adapters/email",
+		"pkg/adapters/http/middleware",
+		"pkg/adapters/logger",
+		"pkg/config",
 		"pkg/container",
 		"pkg/contracts",
+		"pkg/errors",
 		"pkg/events",
 		"pkg/framework/interfaces",
 		"pkg/framework/providers/cache",
 		"pkg/framework/providers/grpc",
 		"pkg/framework/providers/maps",
 		"pkg/framework/providers/payment",
-		"proto",
+		"pkg/proto",
+
+		// Tests
+		"tests/e2e",
+
+		// Documentation
+		"docs",
 	}
 
 	// Criar diretórios
@@ -164,7 +190,7 @@ func generateProjectFile(filePath, templateName string, project Project) error {
 
 	fmt.Println("Criando o arquivo:", filePath)
 
-	tmpl, err := template.ParseFiles(filepath.Join("pkg", "generator", "templates", templateName))
+	tmpl, err := template.ParseFiles(filepath.Join("internal", "generators", "templates", templateName))
 	if err != nil {
 
 		fmt.Println("Erro 1")

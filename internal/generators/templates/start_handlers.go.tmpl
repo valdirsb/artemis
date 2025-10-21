@@ -1,0 +1,92 @@
+package bootstrap
+
+import (
+	"context"
+	"log"
+	orderHandler "{{ .Name }}/internal/modules/order/handler"
+	productHandler "{{ .Name }}/internal/modules/product/handler"
+	userHandler "{{ .Name }}/internal/modules/user/handler"
+	"{{ .Name }}/pkg/container"
+	"{{ .Name }}/pkg/contracts"
+	"{{ .Name }}/pkg/framework"
+	"{{ .Name }}/pkg/framework/providers"
+	grpcProvider "{{ .Name }}/pkg/framework/providers/grpc"
+)
+
+// registerModuleHandlers registers HTTP handlers for enabled modules
+func registerModuleHandlers(c *container.Container, fw *framework.Framework) {
+
+	if framework.IsEnabled("modules", "user") {
+		c.RegisterSingleton("userHandler", func() interface{} {
+			userService := c.MustGet("userService").(contracts.UserService)
+			return userHandler.NewUserHandler(userService)
+		})
+	}
+
+	if framework.IsEnabled("modules", "product") {
+		c.RegisterSingleton("productHandler", func() interface{} {
+			productSvc := c.MustGet("productService").(contracts.ProductService)
+			return productHandler.NewProductHandler(productSvc)
+		})
+	}
+
+	if framework.IsEnabled("modules", "order") {
+		c.RegisterSingleton("orderHandler", func() interface{} {
+			orderSvc := c.MustGet("orderService").(contracts.OrderService)
+			return orderHandler.NewOrderHandler(orderSvc)
+		})
+	}
+}
+
+// registerGRPCServices registers gRPC services with the gRPC provider
+func registerGRPCServices(c *container.Container, fw *framework.Framework) {
+	// Get gRPC provider from framework
+	grpcProv := fw.GetProvider("grpc")
+	if grpcProv == nil {
+		log.Printf("gRPC provider not found")
+		return
+	}
+
+	grpcProvider, ok := grpcProv.(*grpcProvider.GRPCProvider)
+	if !ok {
+		log.Printf("Invalid gRPC provider type")
+		return
+	}
+
+	// Register User gRPC Service
+	if framework.IsEnabled("modules", "user") {
+		userSvc := c.MustGet("userService").(contracts.UserService)
+		userRepo := c.MustGet("userRepository").(contracts.UserRepository)
+		userGRPCService := userHandler.NewUserGRPCHandler(userSvc, userRepo)
+		grpcProvider.RegisterService(userGRPCService)
+		log.Printf("✅ User gRPC service registered")
+	}
+
+	// Register Product gRPC Service
+	if framework.IsEnabled("modules", "product") {
+		productSvc := c.MustGet("productService").(contracts.ProductService)
+		productGRPCService := productHandler.NewGRPCHandler(productSvc)
+		grpcProvider.RegisterService(productGRPCService)
+		log.Printf("✅ Product gRPC service registered")
+	}
+
+	// Register Order gRPC Service
+	if framework.IsEnabled("modules", "order") {
+		orderSvc := c.MustGet("orderService").(contracts.OrderService)
+		orderGRPCService := orderHandler.NewOrderGRPCHandler(orderSvc)
+		grpcProvider.RegisterService(orderGRPCService)
+		log.Printf("✅ Order gRPC service registered")
+	}
+
+	// Agora inicializar o provider com todos os serviços registrados
+	ctx := context.Background()
+	deps := providers.Dependencies{
+		Config: fw.GetConfig(),
+	}
+	if err := grpcProvider.Initialize(ctx, deps); err != nil {
+		log.Printf("❌ Failed to initialize gRPC provider: %v", err)
+		return
+	}
+
+	log.Printf("✅ gRPC server started successfully on port %s", grpcProvider.GetPort())
+}

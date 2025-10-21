@@ -1,0 +1,21 @@
+package templates
+
+const ModuleTemplate = `package {{.ModuleName}}
+
+import (
+	"fmt"
+)
+
+// ModuleName represents the name of the module.
+const ModuleName = "{{.ModuleName}}"
+
+// Init initializes the module.
+func Init() {
+	fmt.Println("Initializing module:", ModuleName)
+}
+
+// ExampleFunction is an example function in the module.
+func ExampleFunction() {
+	fmt.Println("This is an example function in the", ModuleName, "module.")
+}
+`
