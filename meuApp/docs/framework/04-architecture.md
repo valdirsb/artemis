@@ -75,6 +75,7 @@ graph TB
     style AL fill:#fff3e0,color:#000000
     style DL fill:#f3e5f5,color:#000000
     style IL fill:#e8f5e9,color:#000000
+    linkStyle 0,1,2,3,4,5,6,7,8,9,10 stroke:#000000
 ```
 
 ---
@@ -86,35 +87,43 @@ graph TB
 A Clean Architecture é baseada em camadas concêntricas onde as dependências apontam para dentro:
 
 ```mermaid
-graph TD
-    subgraph L1["Frameworks & Drivers (Mais externo)"]
+flowchart TD
+ subgraph L1["Frameworks & Drivers"]
         FW["DB, UI, External Interfaces"]
-    end
-    
-    subgraph L2["Interface Adapters"]
+  end
+ subgraph L2["Interface Adapters"]
         IA["Controllers, Presenters, Gateways"]
-    end
-    
-    subgraph L3["Application Business Rules"]
+  end
+ subgraph L3["Application Business Rules"]
         UC["Use Cases"]
-    end
-    
-    subgraph L4["Enterprise Business Rules (Mais interno)"]
+  end
+ subgraph L4["Enterprise Business Rules"]
         ENT["Entities"]
-    end
-    
-    FW -.->|depende| IA
-    IA -.->|depende| UC
-    UC -.->|depende| ENT
-    
+  end
+    FW L_FW_IA_0@-. depende .-> IA
+    IA L_IA_UC_0@-. depende .-> UC
+    UC L_UC_ENT_0@-. depende .-> ENT
+    n1["Camada Mais externa"] L_n1_L1_0@--- L1
+    L4 --- n2["Camada Mais interna"]
+    note1["Dependências apontam sempre para DENTRO"]
+
+    n1@{ shape: rect}
+    n2@{ shape: rect}
+    style n1 fill:#FFF9C4,stroke:none,color:#000000
+    style L1 fill:#ab47bc,stroke:#333,color:#fff
     style L4 fill:#4a148c,stroke:#333,color:#fff
+    style n2 fill:#FFF9C4,stroke:none,color:#000000
+    style note1 fill:#fff9c4,stroke:#f57f17,color:#000
     style L3 fill:#6a1b9a,stroke:#333,color:#fff
     style L2 fill:#8e24aa,stroke:#333,color:#fff
-    style L1 fill:#ab47bc,stroke:#333,color:#fff
-    
-    note1["Dependências apontam sempre para DENTRO"]
-    
-    style note1 fill:#fff9c4,stroke:#f57f17,color:#000
+    linkStyle 0,1,2 stroke:#000000,fill:none
+    linkStyle 3 stroke:#FFE0B2,fill:none
+    linkStyle 4 stroke:#FFE0B2
+
+    L_FW_IA_0@{ animation: slow } 
+    L_IA_UC_0@{ animation: slow } 
+    L_UC_ENT_0@{ animation: slow } 
+    L_n1_L1_0@{ animation: none } 
 ```
 
 ### Regras de Dependência
@@ -195,6 +204,7 @@ graph LR
     style Core fill:#4caf50,stroke:#2e7d32,color:#fff
     style Drivers fill:#2196f3,stroke:#1565c0,color:#fff
     style Driven fill:#ff9800,stroke:#e65100,color:#fff
+    linkStyle 0,1,2,3,4,5 stroke:#000000,fill:none
 ```
 
 ### Ports (Interfaces)
@@ -440,9 +450,9 @@ graph LR
         O2["Linguagem Ubíqua:<br/>'Pedido'<br/>'Compra'"]
     end
     
-    style UC fill:#e3f2fd,stroke:#1976d2
-    style PC fill:#f3e5f5,stroke:#7b1fa2
-    style OC fill:#e8f5e9,stroke:#388e3c
+    style UC fill:#e3f2fd,stroke:#1976d2,color:#000000
+    style PC fill:#f3e5f5,stroke:#7b1fa2,color:#000000
+    style OC fill:#e8f5e9,stroke:#388e3c,color:#000000
 ```
 
 ---
