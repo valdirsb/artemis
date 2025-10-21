@@ -17,6 +17,10 @@ O Artemis Framework implementa uma arquitetura em camadas que combina Clean Arch
 ### 📐 Diagrama Geral
 
 ```mermaid
+---
+config:
+  theme: mc
+---
 graph TB
     subgraph PL["PRESENTATION LAYER"]
         HTTP["HTTP Handlers<br/>(Gin/REST)"]
@@ -24,7 +28,7 @@ graph TB
     end
     
     subgraph AL["APPLICATION LAYER"]
-        subgraph CQRS["Application Services (CQRS)"]
+        subgraph CQRS["CQRS"]
 
             subgraph CMD["Commands (Write Model)"]
                 CreateUser["• CreateUser"]
@@ -67,10 +71,10 @@ graph TB
     EB --> ADT
     EXT --> ADT
     
-    style PL fill:#e1f5ff
-    style AL fill:#fff3e0
-    style DL fill:#f3e5f5
-    style IL fill:#e8f5e9
+    style PL fill:#e1f5ff,color:#000000
+    style AL fill:#fff3e0,color:#000000
+    style DL fill:#f3e5f5,color:#000000
+    style IL fill:#e8f5e9,color:#000000
 ```
 
 ---
@@ -110,7 +114,7 @@ graph TD
     
     note1["Dependências apontam sempre para DENTRO"]
     
-    style note1 fill:#fff9c4,stroke:#f57f17
+    style note1 fill:#fff9c4,stroke:#f57f17,color:#000
 ```
 
 ### Regras de Dependência
