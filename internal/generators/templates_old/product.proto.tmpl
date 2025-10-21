@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package api;
 
-option go_package = "{{.Name}}/proto";
+option go_package = "go-modular-monolith/proto";
 
 // Product service definition
 service ProductService {
@@ -90,12 +90,10 @@ message ListProductsRequest {
 
 message ListProductsResponse {
   repeated Product products = 1;
-  int32 total_items = 2;
+  int32 total = 2;
   int32 page = 3;
   int32 page_size = 4;
-  int32 total_pages = 5;
-  string message = 6;
-
+  string message = 5;
 }
 
 // Search Products

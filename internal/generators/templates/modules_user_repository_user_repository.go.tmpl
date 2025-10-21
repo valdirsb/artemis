@@ -1,0 +1,156 @@
+package repository
+
+import (
+	"context"
+	"fmt"
+
+	"{{.Name}}/internal/modules/user/domain"
+	"{{.Name}}/internal/modules/user/ports"
+
+	"gorm.io/gorm"
+)
+
+// mysqlUserRepository implementa a interface UserRepository usando MySQL/GORM
+type mysqlUserRepository struct {
+	db *gorm.DB
+}
+
+// NewMySQLUserRepository cria uma nova instância do repositório MySQL
+func NewMySQLUserRepository(db *gorm.DB) ports.UserRepository {
+	return &mysqlUserRepository{
+		db: db,
+	}
+}
+
+// Create cria um novo usuário no banco de dados
+func (r *mysqlUserRepository) Create(ctx context.Context, user *domain.User) error {
+	userModel := &UserModel{}
+	userModel.FromDomain(user)
+
+	if err := r.db.WithContext(ctx).Create(userModel).Error; err != nil {
+		return fmt.Errorf("failed to create user: %w", err)
+	}
+
+	return nil
+}
+
+// GetByID busca um usuário pelo ID
+func (r *mysqlUserRepository) GetByID(ctx context.Context, id string) (*domain.User, error) {
+	var userModel UserModel
+
+	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&userModel).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("user not found")
+		}
+		return nil, fmt.Errorf("failed to get user by ID: %w", err)
+	}
+
+	return userModel.ToDomain(), nil
+}
+
+// GetByEmail busca um usuário pelo email
+func (r *mysqlUserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
+	var userModel UserModel
+
+	if err := r.db.WithContext(ctx).Where("email = ?", email).First(&userModel).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("user not found")
+		}
+		return nil, fmt.Errorf("failed to get user by email: %w", err)
+	}
+
+	return userModel.ToDomain(), nil
+}
+
+// GetByUsername busca um usuário pelo username
+func (r *mysqlUserRepository) GetByUsername(ctx context.Context, username string) (*domain.User, error) {
+	var userModel UserModel
+
+	if err := r.db.WithContext(ctx).Where("username = ?", username).First(&userModel).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("user not found")
+		}
+		return nil, fmt.Errorf("failed to get user by username: %w", err)
+	}
+
+	return userModel.ToDomain(), nil
+}
+
+// Update atualiza um usuário no banco de dados
+func (r *mysqlUserRepository) Update(ctx context.Context, user *domain.User) error {
+	userModel := &UserModel{}
+	userModel.FromDomain(user)
+
+	if err := r.db.WithContext(ctx).Save(userModel).Error; err != nil {
+		return fmt.Errorf("failed to update user: %w", err)
+	}
+
+	return nil
+}
+
+// Delete deleta um usuário do banco de dados
+func (r *mysqlUserRepository) Delete(ctx context.Context, id string) error {
+	if err := r.db.WithContext(ctx).Where("id = ?", id).Delete(&UserModel{}).Error; err != nil {
+		return fmt.Errorf("failed to delete user: %w", err)
+	}
+
+	return nil
+}
+
+// List lista usuários com paginação
+func (r *mysqlUserRepository) List(ctx context.Context, offset, limit int) ([]*domain.User, error) {
+	var userModels []UserModel
+
+	if err := r.db.WithContext(ctx).
+		Offset(offset).
+		Limit(limit).
+		Find(&userModels).Error; err != nil {
+		return nil, fmt.Errorf("failed to list users: %w", err)
+	}
+
+	users := make([]*domain.User, len(userModels))
+	for i, userModel := range userModels {
+		users[i] = userModel.ToDomain()
+	}
+
+	return users, nil
+}
+
+// Count conta o total de usuários
+func (r *mysqlUserRepository) Count(ctx context.Context) (int64, error) {
+	var count int64
+
+	if err := r.db.WithContext(ctx).Model(&UserModel{}).Count(&count).Error; err != nil {
+		return 0, fmt.Errorf("failed to count users: %w", err)
+	}
+
+	return count, nil
+}
+
+// ExistsByEmail verifica se um usuário existe pelo email
+func (r *mysqlUserRepository) ExistsByEmail(ctx context.Context, email string) (bool, error) {
+	var count int64
+
+	if err := r.db.WithContext(ctx).
+		Model(&UserModel{}).
+		Where("email = ?", email).
+		Count(&count).Error; err != nil {
+		return false, fmt.Errorf("failed to check if user exists by email: %w", err)
+	}
+
+	return count > 0, nil
+}
+
+// ExistsByUsername verifica se um usuário existe pelo username
+func (r *mysqlUserRepository) ExistsByUsername(ctx context.Context, username string) (bool, error) {
+	var count int64
+
+	if err := r.db.WithContext(ctx).
+		Model(&UserModel{}).
+		Where("username = ?", username).
+		Count(&count).Error; err != nil {
+		return false, fmt.Errorf("failed to check if user exists by username: %w", err)
+	}
+
+	return count > 0, nil
+}

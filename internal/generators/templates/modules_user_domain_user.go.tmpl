@@ -1,0 +1,155 @@
+package domain
+
+import (
+	"errors"
+	"regexp"
+	"time"
+	"unicode/utf8"
+)
+
+// User representa a entidade de domínio do usuário
+type User struct {
+	ID        string
+	Username  string
+	Email     string
+	Password  string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+// UserAggregate contém as regras de negócio do usuário
+type UserAggregate struct {
+	user *User
+}
+
+// NewUser cria um novo usuário com validações de domínio
+func NewUser(id, username, email string) (*User, error) {
+	if err := validateUsername(username); err != nil {
+		return nil, err
+	}
+
+	if err := validateEmail(email); err != nil {
+		return nil, err
+	}
+
+	return &User{
+		ID:        id,
+		Username:  username,
+		Email:     email,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}, nil
+}
+
+// NewUserAggregate cria um novo agregado de usuário
+func NewUserAggregate(user *User) *UserAggregate {
+	return &UserAggregate{user: user}
+}
+
+// GetUser retorna o usuário do agregado
+func (ua *UserAggregate) GetUser() *User {
+	return ua.user
+}
+
+// ChangePassword altera a senha do usuário
+func (ua *UserAggregate) ChangePassword(newPassword string) error {
+	if err := validatePassword(newPassword); err != nil {
+		return err
+	}
+
+	ua.user.Password = newPassword
+	ua.user.UpdatedAt = time.Now()
+	return nil
+}
+
+// UpdateProfile atualiza o perfil do usuário
+func (ua *UserAggregate) UpdateProfile(username, email string) error {
+	if err := validateUsername(username); err != nil {
+		return err
+	}
+
+	if err := validateEmail(email); err != nil {
+		return err
+	}
+
+	ua.user.Username = username
+	ua.user.Email = email
+	ua.user.UpdatedAt = time.Now()
+	return nil
+}
+
+// validateUsername valida o nome de usuário
+func validateUsername(username string) error {
+	if username == "" {
+		return errors.New("username cannot be empty")
+	}
+
+	if utf8.RuneCountInString(username) < 3 {
+		return errors.New("username must be at least 3 characters long")
+	}
+
+	if utf8.RuneCountInString(username) > 50 {
+		return errors.New("username must be at most 50 characters long")
+	}
+
+	// Deve conter apenas letras, números e underscore
+	validUsername := regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
+	if !validUsername.MatchString(username) {
+		return errors.New("username can only contain letters, numbers and underscores")
+	}
+
+	return nil
+}
+
+// validateEmail valida o formato do email
+func validateEmail(email string) error {
+	if email == "" {
+		return errors.New("email cannot be empty")
+	}
+
+	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+	if !emailRegex.MatchString(email) {
+		return errors.New("invalid email format")
+	}
+
+	return nil
+}
+
+// validatePassword valida a senha
+func validatePassword(password string) error {
+	if password == "" {
+		return errors.New("password cannot be empty")
+	}
+
+	if utf8.RuneCountInString(password) < 8 {
+		return errors.New("password must be at least 8 characters long")
+	}
+
+	if utf8.RuneCountInString(password) > 100 {
+		return errors.New("password must be at most 100 characters long")
+	}
+
+	return nil
+}
+
+// GetID retorna o ID do usuário
+func (u *User) GetID() string {
+	return u.ID
+}
+
+// GetUsername retorna o username do usuário
+func (u *User) GetUsername() string {
+	return u.Username
+}
+
+// GetEmail retorna o email do usuário
+func (u *User) GetEmail() string {
+	return u.Email
+}
+
+// IsValid verifica se o usuário é válido
+func (u *User) IsValid() bool {
+	return validateUsername(u.Username) == nil &&
+		validateEmail(u.Email) == nil &&
+		u.ID != ""
+}

@@ -1,0 +1,87 @@
+package services
+
+import (
+	"context"
+
+	"{{.Name}}/internal/modules/user/application/commands"
+	"{{.Name}}/internal/modules/user/application/queries"
+	"{{.Name}}/internal/modules/user/domain"
+	"{{.Name}}/internal/modules/user/ports"
+)
+
+type UserApplicationService struct {
+	createUserHandler          *commands.CreateUserHandler
+	updateUserHandler          *commands.UpdateUserHandler
+	deleteUserHandler          *commands.DeleteUserHandler
+	validateCredentialsHandler *commands.ValidateCredentialsHandler
+	getUserHandler             *queries.GetUserHandler
+	listUsersHandler           *queries.ListUsersHandler
+	getUserByEmailHandler      *queries.GetUserByEmailHandler
+}
+
+func NewUserApplicationService(
+	createUserHandler *commands.CreateUserHandler,
+	updateUserHandler *commands.UpdateUserHandler,
+	deleteUserHandler *commands.DeleteUserHandler,
+	validateCredentialsHandler *commands.ValidateCredentialsHandler,
+	getUserHandler *queries.GetUserHandler,
+	listUsersHandler *queries.ListUsersHandler,
+	getUserByEmailHandler *queries.GetUserByEmailHandler,
+) *UserApplicationService {
+	return &UserApplicationService{
+		createUserHandler:          createUserHandler,
+		updateUserHandler:          updateUserHandler,
+		deleteUserHandler:          deleteUserHandler,
+		validateCredentialsHandler: validateCredentialsHandler,
+		getUserHandler:             getUserHandler,
+		listUsersHandler:           listUsersHandler,
+		getUserByEmailHandler:      getUserByEmailHandler,
+	}
+}
+
+func (s *UserApplicationService) CreateUser(ctx context.Context, username, email, password string) (*domain.User, error) {
+	cmd := commands.CreateUserCommand{Username: username, Email: email, Password: password}
+	return s.createUserHandler.Handle(ctx, cmd)
+}
+
+func (s *UserApplicationService) UpdateUser(ctx context.Context, id string, username, email *string) (*domain.User, error) {
+	cmd := commands.UpdateUserCommand{UserID: id, Username: username, Email: email}
+	return s.updateUserHandler.Handle(ctx, cmd)
+}
+
+func (s *UserApplicationService) DeleteUser(ctx context.Context, id string) error {
+	cmd := commands.DeleteUserCommand{UserID: id}
+	return s.deleteUserHandler.Handle(ctx, cmd)
+}
+
+func (s *UserApplicationService) GetUserByID(ctx context.Context, id string) (*domain.User, error) {
+	query := queries.GetUserQuery{UserID: id}
+	return s.getUserHandler.Handle(ctx, query)
+}
+
+func (s *UserApplicationService) ListUsers(ctx context.Context, page, pageSize int) (*ports.PaginatedUserResult, error) {
+	query := queries.ListUsersQuery{Page: page, PageSize: pageSize}
+	result, err := s.listUsersHandler.Handle(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	// Converter ListUsersResult para PaginatedUserResult
+	return &ports.PaginatedUserResult{
+		Items:      result.Users,
+		TotalItems: result.Total,
+		Page:       result.Page,
+		PageSize:   result.PageSize,
+		TotalPages: result.TotalPages,
+	}, nil
+}
+
+func (s *UserApplicationService) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
+	query := queries.GetUserByEmailQuery{Email: email}
+	return s.getUserByEmailHandler.Handle(ctx, query)
+}
+
+func (s *UserApplicationService) ValidateCredentials(ctx context.Context, email, password string) (*domain.User, error) {
+	cmd := commands.ValidateCredentialsCommand{Email: email, Password: password}
+	return s.validateCredentialsHandler.Handle(ctx, cmd)
+}

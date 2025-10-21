@@ -1,0 +1,140 @@
+package framework
+
+import (
+	"fmt"
+	"io/ioutil"
+	"log"
+
+	"gopkg.in/yaml.v3"
+)
+
+type FrameworkConfig struct {
+	Framework    CoreFramework       `yaml:"framework"`
+	Core         CoreFeatures        `yaml:"core"`
+	Database     DatabaseProviders   `yaml:"database"`
+	Cache        CacheProviders      `yaml:"cache"`
+	Protocols    ProtocolFeatures    `yaml:"protocols"`
+	Integrations IntegrationFeatures `yaml:"integrations"`
+	Security     SecurityFeatures    `yaml:"security"`
+	Development  DevelopmentFeatures `yaml:"development"`
+	Modules      map[string]bool     `yaml:"modules"`
+}
+
+type CoreFramework struct {
+	Name    string `yaml:"name"`
+	Version string `yaml:"version"`
+}
+
+type CoreFeatures struct {
+	HTTPServer          bool `yaml:"http_server"`
+	DependencyInjection bool `yaml:"dependency_injection"`
+	EventSystem         bool `yaml:"event_system"`
+	Logging             bool `yaml:"logging"`
+	DatabaseMigrations  bool `yaml:"database_migrations"`
+}
+
+type DatabaseProviders struct {
+	MySQL      bool `yaml:"mysql"`
+	PostgreSQL bool `yaml:"postgresql"`
+	MongoDB    bool `yaml:"mongodb"`
+	SQLite     bool `yaml:"sqlite"`
+}
+
+type CacheProviders struct {
+	Redis     bool `yaml:"redis"`
+	Memcached bool `yaml:"memcached"`
+	InMemory  bool `yaml:"in_memory"`
+}
+
+type ProtocolFeatures struct {
+	HTTP       bool `yaml:"http"`
+	GRPC       bool `yaml:"grpc"`
+	WebSockets bool `yaml:"websockets"`
+	GraphQL    bool `yaml:"graphql"`
+}
+
+type IntegrationFeatures struct {
+	JWT          bool `yaml:"jwt"`
+	OAuth2       bool `yaml:"oauth2"`
+	FirebaseAuth bool `yaml:"firebase_auth"`
+	Stripe       bool `yaml:"stripe"`
+	GoogleMaps   bool `yaml:"google_maps"`
+	PIX          bool `yaml:"pix"`
+}
+
+type SecurityFeatures struct {
+	CORS         bool `yaml:"cors"`
+	RateLimiting bool `yaml:"rate_limiting"`
+	CSRF         bool `yaml:"csrf"`
+	XSS          bool `yaml:"xss"`
+}
+
+type DevelopmentFeatures struct {
+	Swagger   bool `yaml:"swagger"`
+	DebugMode bool `yaml:"debug_mode"`
+	HotReload bool `yaml:"hot_reload"`
+}
+
+// LoadConfig loads framework configuration from YAML file
+func LoadConfig(configPath string) (*FrameworkConfig, error) {
+	data, err := ioutil.ReadFile(configPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read config file: %v", err)
+	}
+
+	var config FrameworkConfig
+	if err := yaml.Unmarshal(data, &config); err != nil {
+		return nil, fmt.Errorf("failed to parse config: %v", err)
+	}
+
+	log.Printf("Loaded framework configuration: %s v%s", config.Framework.Name, config.Framework.Version)
+	return &config, nil
+}
+
+// IsEnabled is a package-level function to check if a feature is enabled
+var globalConfig *FrameworkConfig
+
+func init() {
+	// This will be set when framework is initialized
+}
+
+func SetGlobalConfig(config *FrameworkConfig) {
+	globalConfig = config
+}
+
+func IsEnabled(category, feature string) bool {
+	if globalConfig == nil {
+		return false
+	}
+
+	switch category {
+	case "modules":
+		if enabled, exists := globalConfig.Modules[feature]; exists {
+			return enabled
+		}
+	case "core":
+		switch feature {
+		case "http_server":
+			return globalConfig.Core.HTTPServer
+		case "event_system":
+			return globalConfig.Core.EventSystem
+		case "logging":
+			return globalConfig.Core.Logging
+		}
+	case "database":
+		switch feature {
+		case "mysql":
+			return globalConfig.Database.MySQL
+		case "postgresql":
+			return globalConfig.Database.PostgreSQL
+		}
+	case "protocols":
+		switch feature {
+		case "grpc":
+			return globalConfig.Protocols.GRPC
+		case "http":
+			return globalConfig.Protocols.HTTP
+		}
+	}
+	return false
+}

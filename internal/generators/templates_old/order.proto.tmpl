@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package api;
 
-option go_package = "{{.Name}}/proto";
+option go_package = "go-modular-monolith/proto";
 
 // Order service definition
 service OrderService {
@@ -18,10 +18,7 @@ service OrderService {
   // Delete order
   rpc DeleteOrder(DeleteOrderRequest) returns (DeleteOrderResponse);
   
-  // List all orders with pagination
-  rpc ListOrders(ListOrdersRequest) returns (ListOrdersResponse);
-  
-  // Get orders by user with pagination
+  // Get orders by user
   rpc GetOrdersByUser(GetOrdersByUserRequest) returns (ListOrdersResponse);
 }
 
@@ -86,12 +83,6 @@ message DeleteOrderRequest {
 
 message DeleteOrderResponse {
   string message = 1;
-}
-
-// List Orders
-message ListOrdersRequest {
-  int32 page = 1;
-  int32 page_size = 2;
 }
 
 message ListOrdersResponse {

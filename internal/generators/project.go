@@ -97,6 +97,9 @@ func (g *ProjectGenerator) Generate(projectPath, projectName string) error {
 
 		// Documentation
 		"docs",
+
+		//Proto
+		"proto",
 	}
 
 	// Criar diretórios
@@ -109,70 +112,54 @@ func (g *ProjectGenerator) Generate(projectPath, projectName string) error {
 
 	// Gerar arquivos base
 	files := map[string]string{
-		"main.go":                              "main.go.tmpl",
-		"README.md":                            "README.md.tmpl",
-		"go.mod":                               "go.mod.tmpl",
-		".env":                                 "env.tmpl",
-		"Makefile":                             "Makefile.tmpl",
-		"framework.yaml":                       "framework.yaml.tmpl",
-		"internal/bootstrap/bootstrap.go":      "bootstrap.go.tmpl",
-		"internal/bootstrap/mock.go":           "mock.go.tmpl",
-		"internal/bootstrap/start_handlers.go": "start_handlers.go.tmpl",
-		"internal/bootstrap/start_repositories.go":   "start_repositories.go.tmpl",
-		"internal/bootstrap/start_services.go":       "start_services.go.tmpl",
-		"internal/routes/routes.go":                  "routes.go.tmpl",
-		"internal/shared/config/config.go":           "config.go.tmpl",
-		"internal/shared/database/database.go":       "database.go.tmpl",
-		"internal/shared/logger/logger.go":           "logger.go.tmpl",
-		"internal/shared/middleware/middleware.go":   "middleware.go.tmpl",
-		"pkg/container/container.go":                 "container.go.tmpl",
-		"pkg/contracts/infrastructure.go":            "infrastructure.go.tmpl",
-		"pkg/contracts/interfaces_order.go":          "interfaces_order.go.tmpl",
-		"pkg/contracts/interfaces_product.go":        "interfaces_product.go.tmpl",
-		"pkg/contracts/interfaces_user.go":           "interfaces_user.go.tmpl",
-		"pkg/contracts/interfaces.go":                "interfaces.go.tmpl",
-		"pkg/events/eventbus.go":                     "eventbus.go.tmpl",
-		"pkg/framework/interfaces/provider.go":       "provider.go.tmpl",
-		"pkg/framework/providers/cache/redis.go":     "redis.go.tmpl",
-		"pkg/framework/providers/grpc/grpc.go":       "grpc.go.tmpl",
-		"pkg/framework/providers/maps/maps.go":       "maps.go.tmpl",
-		"pkg/framework/providers/payment/payment.go": "payment.go.tmpl",
-		"pkg/framework/providers/provider.go":        "provider2.go.tmpl",
-		"pkg/framework/config.go":                    "config-framework.go.tmpl",
-		"pkg/framework/framework.go":                 "framework.go.tmpl",
-		"proto/order.proto":                          "order.proto.tmpl",
-		"proto/product.proto":                        "product.proto.tmpl",
-		"proto/user.proto":                           "user.proto.tmpl",
-		"internal/modules/README.md":                 "README-module.md.tmpl",
+		// Arquivos raiz
+		"main.go":        "main.go.tmpl",
+		"README.md":      "README.md.tmpl",
+		"go.mod":         "go.mod.tmpl",
+		".env":           "env.tmpl",
+		"Makefile":       "Makefile.tmpl",
+		"framework.yaml": "framework.yaml.tmpl",
 
-		//Module User
-		"internal/modules/user/adapters/password_hasher.go":   "mod_user_password_hasher.go.tmpl",
-		"internal/modules/user/domain/user.go":                "mod_user_domain_user.go.tmpl",
-		"internal/modules/user/handler/user_handler.go":       "mod_user_handler_user_handler.go.tmpl",
-		"internal/modules/user/handler/user_grpc_handler.go":  "mod_user_handler_user_grpc_handler.go.tmpl",
-		"internal/modules/user/ports/ports.go":                "mod_user_ports.go.tmpl",
-		"internal/modules/user/repository/user_repository.go": "mod_user_repository.go.tmpl",
-		"internal/modules/user/service/user_service.go":       "mod_user_service.go.tmpl",
-		"internal/modules/user/README.md":                     "README-module-user.md.tmpl",
+		// Internal/Bootstrap
+		"internal/bootstrap/bootstrap_registry.go": "bootstrap_registry.go.tmpl",
+		"internal/bootstrap/mock.go":               "mock.go.tmpl",
 
-		//Module Product
-		"internal/modules/product/domain/product.go":                "mod_product_domain_product.go.tmpl",
-		"internal/modules/product/handler/product_handler.go":       "mod_product_handler_product_handler.go.tmpl",
-		"internal/modules/product/handler/product_grpc_handler.go":  "mod_product_handler_product_grpc_handler.go.tmpl",
-		"internal/modules/product/repository/product_repository.go": "mod_product_repository.go.tmpl",
-		"internal/modules/product/service/product_service.go":       "mod_product_service.go.tmpl",
-		"internal/modules/product/README.md":                        "README-module-product.md.tmpl",
+		// Pkg/Config
+		"pkg/config/config.go": "config.go.tmpl",
 
-		//Module Order
-		"internal/modules/order/domain/order.go":                "mod_order_domain_order.go.tmpl",
-		"internal/modules/order/handler/order_handler.go":       "mod_order_handler_order_handler.go.tmpl",
-		"internal/modules/order/handler/order_grpc_handler.go":  "mod_order_handler_order_grpc_handler.go.tmpl",
-		"internal/modules/order/repository/order_repository.go": "mod_order_repository.go.tmpl",
-		"internal/modules/order/service/order_service.go":       "mod_order_service.go.tmpl",
-		"internal/modules/order/README.md":                      "README-module-order.md.tmpl",
-	}
+		// Pkg/Container
+		"pkg/container/container.go": "container.go.tmpl",
 
-	// Criar arquivos
+		// Pkg/Events
+		"pkg/events/eventbus.go": "eventbus.go.tmpl",
+
+		// Pkg/Framework
+		"pkg/framework/framework.go": "framework.go.tmpl",
+		"pkg/framework/config.go":    "framework_config.go.tmpl",
+
+		// Pkg/Contracts
+		"pkg/contracts/interfaces.go": "interfaces.go.tmpl",
+
+		// Pkg/Adapters/Database/MySQL
+		"pkg/adapters/database/mysql/connection.go": "mysql_connection.go.tmpl",
+		"pkg/adapters/database/mysql/migrations.go": "mysql_migrations.go.tmpl",
+
+		// Proto files
+		"proto/user.proto":    "user.proto.tmpl",
+		"proto/product.proto": "product.proto.tmpl",
+		"proto/order.proto":   "order.proto.tmpl",
+
+		// User Module
+		"internal/modules/user_module.go":                                        "user_module.go.tmpl",
+		"internal/modules/user/domain/user.go":                                   "modules_user_domain_user.go.tmpl",
+		"internal/modules/user/repository/user_repository.go":                    "modules_user_repository_user_repository.go.tmpl",
+		"internal/modules/user/repository/user_model.go":                         "modules_user_repository_user_model.go.tmpl",
+		"internal/modules/user/ports/ports.go":                                   "modules_user_ports_ports.go.tmpl",
+		"internal/modules/user/application/services/user_application_service.go": "modules_user_application_services_user_application_service.go.tmpl",
+
+		// TODO: Adicionar mais templates dos módulos conforme necessário
+		// Este é um exemplo básico com os templates essenciais criados
+	} // Criar arquivos
 	for filePath, content := range files {
 
 		fullPath := filepath.Join(projectPath, filePath)

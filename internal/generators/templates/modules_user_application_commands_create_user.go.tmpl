@@ -1,0 +1,142 @@
+package commands
+
+import (
+	"context"
+
+	"{{.Name}}/internal/modules/user"
+	"{{.Name}}/internal/modules/user/domain"
+	"{{.Name}}/internal/modules/user/ports"
+	"{{.Name}}/pkg/contracts"
+	apperrors "{{.Name}}/pkg/errors"
+	"{{.Name}}/pkg/events"
+
+	"github.com/google/uuid"
+)
+
+type CreateUserCommand struct {
+	Username string
+	Email    string
+	Password string
+}
+
+type CreateUserHandler struct {
+	userRepo       ports.UserRepository
+	passwordHasher ports.PasswordHasher
+	emailService   ports.EmailService
+	eventPublisher contracts.EventPublisher
+	typedPublisher *events.TypedEventPublisher
+	logger         contracts.Logger
+}
+
+func NewCreateUserHandler(
+	userRepo ports.UserRepository,
+	passwordHasher ports.PasswordHasher,
+	emailService ports.EmailService,
+	eventPublisher contracts.EventPublisher,
+	logger contracts.Logger,
+) *CreateUserHandler {
+	// Criar typed publisher a partir do eventPublisher (que é um EventBus)
+	var typedPub *events.TypedEventPublisher
+	if eventBus, ok := eventPublisher.(*events.EventBus); ok {
+		typedPub = events.NewTypedEventPublisher(eventBus)
+	}
+
+	return &CreateUserHandler{
+		userRepo:       userRepo,
+		passwordHasher: passwordHasher,
+		emailService:   emailService,
+		eventPublisher: eventPublisher,
+		typedPublisher: typedPub,
+		logger:         logger,
+	}
+}
+
+func (h *CreateUserHandler) Handle(ctx context.Context, cmd CreateUserCommand) (*domain.User, error) {
+	h.logger.Info("Executing CreateUserCommand", contracts.Field{Key: "email", Value: cmd.Email})
+
+	// Validação de entrada
+	if cmd.Email == "" {
+		return nil, user.ErrInvalidEmail
+	}
+
+	if cmd.Username == "" {
+		return nil, user.ErrInvalidUsername
+	}
+
+	if cmd.Password == "" {
+		return nil, user.ErrInvalidPassword
+	}
+
+	// Verificar se o email já existe
+	existsByEmail, err := h.userRepo.ExistsByEmail(ctx, cmd.Email)
+	if err != nil {
+		h.logger.Error("Failed to check if email exists", contracts.Field{Key: "error", Value: err.Error()})
+		return nil, err
+	}
+
+	if existsByEmail {
+		return nil, user.ErrEmailAlreadyExists
+	}
+
+	// Verificar se o username já existe
+	existsByUsername, err := h.userRepo.ExistsByUsername(ctx, cmd.Username)
+	if err != nil {
+		h.logger.Error("Failed to check if username exists", contracts.Field{Key: "error", Value: err.Error()})
+		return nil, err
+	}
+
+	if existsByUsername {
+		return nil, user.ErrUsernameAlreadyExists
+	}
+
+	// Gerar ID único para o usuário
+	userID := uuid.New().String()
+
+	// Criar entidade de domínio
+	user, err := domain.NewUser(userID, cmd.Username, cmd.Email)
+	if err != nil {
+		h.logger.Error("Failed to create user domain entity", contracts.Field{Key: "error", Value: err.Error()})
+		return nil, err
+	}
+
+	// Hash da senha
+	hashedPassword, err := h.passwordHasher.Hash(cmd.Password)
+	if err != nil {
+		h.logger.Error("Failed to hash password", contracts.Field{Key: "error", Value: err.Error()})
+		return nil, apperrors.NewInternalError("failed to process password", err)
+	}
+
+	user.Password = hashedPassword
+
+	// Salvar no repositório
+	if err := h.userRepo.Create(ctx, user); err != nil {
+		h.logger.Error("Failed to create user in repository", contracts.Field{Key: "error", Value: err.Error()})
+		return nil, err
+	}
+
+	// Publicar evento de usuário criado
+	if h.typedPublisher != nil {
+		userCreatedEvent := events.UserCreatedEvent{
+			UserID:   user.ID,
+			Username: user.Username,
+			Email:    user.Email,
+		}
+
+		if err := h.typedPublisher.Publish(ctx, userCreatedEvent); err != nil {
+			h.logger.Error("Failed to publish UserCreatedEvent", contracts.Field{Key: "error", Value: err.Error()})
+			// Não retornamos erro aqui pois o usuário foi criado com sucesso
+		}
+	}
+
+	// Enviar email de boas-vindas (opcional, não deve falhar a criação)
+	if h.emailService != nil {
+		if err := h.emailService.SendWelcomeEmail(ctx, user.ID, user.Email); err != nil {
+			h.logger.Error("Failed to send welcome email", contracts.Field{Key: "error", Value: err.Error()})
+			// Não retornamos erro aqui pois o usuário foi criado com sucesso
+		}
+	}
+
+	h.logger.Info("User created successfully", contracts.Field{Key: "userID", Value: user.ID})
+
+	return user, nil
+}
