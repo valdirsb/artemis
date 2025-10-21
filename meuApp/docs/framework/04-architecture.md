@@ -16,74 +16,61 @@ O Artemis Framework implementa uma arquitetura em camadas que combina Clean Arch
 
 ### 📐 Diagrama Geral
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                         PRESENTATION LAYER                           │
-│                    (Controllers / Handlers)                          │
-│  ┌──────────────────┐                    ┌──────────────────┐       │
-│  │  HTTP Handlers   │                    │  gRPC Services   │       │
-│  │   (Gin/REST)     │                    │   (Protocol Buf) │       │
-│  └────────┬─────────┘                    └─────────┬────────┘       │
-│           │                                        │                 │
-│           └────────────────┬───────────────────────┘                 │
-└────────────────────────────┼─────────────────────────────────────────┘
-                             │
-┌────────────────────────────┼─────────────────────────────────────────┐
-│                            ▼      APPLICATION LAYER                  │
-│                                                                       │
-│  ┌──────────────────────────────────────────────────────────┐       │
-│  │              Application Services (CQRS)                 │       │
-│  │  ┌────────────────────┐    ┌──────────────────────┐     │       │
-│  │  │     Commands       │    │      Queries         │     │       │
-│  │  │  (Write Model)     │    │   (Read Model)       │     │       │
-│  │  │                    │    │                      │     │       │
-│  │  │ • CreateUser       │    │ • GetUser           │     │       │
-│  │  │ • UpdateUser       │    │ • ListUsers         │     │       │
-│  │  │ • DeleteUser       │    │ • SearchUsers       │     │       │
-│  │  └────────────────────┘    └──────────────────────┘     │       │
-│  └──────────────┬────────────────────┬──────────────────────┘       │
-│                 │                    │                               │
-└─────────────────┼────────────────────┼───────────────────────────────┘
-                  │                    │
-┌─────────────────┼────────────────────┼───────────────────────────────┐
-│                 ▼                    ▼      DOMAIN LAYER             │
-│                                                                       │
-│  ┌─────────────────────────────────────────────────────────┐        │
-│  │                    Domain Model                         │        │
-│  │  ┌──────────────┐  ┌───────────────┐  ┌──────────────┐ │        │
-│  │  │  Entities    │  │ Value Objects │  │    Events    │ │        │
-│  │  │              │  │               │  │              │ │        │
-│  │  │ User         │  │ Email         │  │ UserCreated  │ │        │
-│  │  │ Product      │  │ Money         │  │ OrderPlaced  │ │        │
-│  │  │ Order        │  │ Address       │  │ PaymentDone  │ │        │
-│  │  └──────────────┘  └───────────────┘  └──────────────┘ │        │
-│  │                                                         │        │
-│  │  ┌──────────────────────────────────────────────────┐  │        │
-│  │  │         Domain Services & Business Rules        │  │        │
-│  │  └──────────────────────────────────────────────────┘  │        │
-│  └─────────────────────────────────────────────────────────┘        │
-│                               │                                      │
-└───────────────────────────────┼──────────────────────────────────────┘
-                                │
-┌───────────────────────────────┼──────────────────────────────────────┐
-│                               ▼     INFRASTRUCTURE LAYER             │
-│                                                                       │
-│  ┌────────────────┐  ┌─────────────┐  ┌──────────────────┐          │
-│  │  Repositories  │  │  Event Bus  │  │ External Services│          │
-│  │                │  │             │  │                  │          │
-│  │ • MySQL        │  │ • In-Memory │  │ • Email Service  │          │
-│  │ • PostgreSQL   │  │ • Redis     │  │ • Payment API    │          │
-│  │ • MongoDB      │  │ • RabbitMQ  │  │ • SMS Service    │          │
-│  └────────────────┘  └─────────────┘  └──────────────────┘          │
-│                                                                       │
-│  ┌────────────────────────────────────────────────────────┐          │
-│  │              Adapters (Implementations)                │          │
-│  │  • Database Adapters                                   │          │
-│  │  • HTTP Clients                                        │          │
-│  │  • Message Queues                                      │          │
-│  │  • Cache Systems                                       │          │
-│  └────────────────────────────────────────────────────────┘          │
-└───────────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph PL["PRESENTATION LAYER"]
+        HTTP["HTTP Handlers<br/>(Gin/REST)"]
+        GRPC["gRPC Services<br/>(Protocol Buf)"]
+    end
+    
+    subgraph AL["APPLICATION LAYER"]
+        subgraph CQRS["Application Services (CQRS)"]
+
+            subgraph CMD["Commands (Write Model)"]
+                CreateUser["• CreateUser"]
+                UpdateUser["• UpdateUser"]
+                DeleteUser["• DeleteUser"]
+            end
+            subgraph QRY["Queries (Read Model)"]
+                GetUser["• GetUser"]
+                ListUsers["• ListUsers"]
+                SearchUsers["• SearchUsers"]
+            end
+        end
+    end
+    
+    subgraph DL["DOMAIN LAYER"]
+        subgraph DM["Domain Model"]
+            ENT["Entities<br/>• User<br/>• Product<br/>• Order"]
+            VO["Value Objects<br/>• Email<br/>• Money<br/>• Address"]
+            EVT["Events<br/>• UserCreated<br/>• OrderPlaced<br/>• PaymentDone"]
+        end
+        DS["Domain Services &<br/>Business Rules"]
+    end
+    
+    subgraph IL["INFRASTRUCTURE LAYER"]
+        REPO["Repositories<br/>• MySQL<br/>• PostgreSQL<br/>• MongoDB"]
+        EB["Event Bus<br/>• In-Memory<br/>• Redis<br/>• RabbitMQ"]
+        EXT["External Services<br/>• Email Service<br/>• Payment API<br/>• SMS Service"]
+        ADT["Adapters<br/>• Database Adapters<br/>• HTTP Clients<br/>• Message Queues<br/>• Cache Systems"]
+    end
+    
+    HTTP --> CQRS
+    GRPC --> CQRS
+    CMD --> DM
+    QRY --> DM
+    DM --> DS
+    DS --> REPO
+    DS --> EB
+    DS --> EXT
+    REPO --> ADT
+    EB --> ADT
+    EXT --> ADT
+    
+    style PL fill:#e1f5ff
+    style AL fill:#fff3e0
+    style DL fill:#f3e5f5
+    style IL fill:#e8f5e9
 ```
 
 ---
@@ -94,25 +81,36 @@ O Artemis Framework implementa uma arquitetura em camadas que combina Clean Arch
 
 A Clean Architecture é baseada em camadas concêntricas onde as dependências apontam para dentro:
 
-```
-┌─────────────────────────────────────────────────┐
-│                  Frameworks                     │  ← Mais externo
-│  ┌───────────────────────────────────────────┐  │
-│  │         Interface Adapters              │  │
-│  │  ┌─────────────────────────────────────┐  │  │
-│  │  │      Application Business Rules     │  │  │
-│  │  │  ┌───────────────────────────────┐  │  │  │
-│  │  │  │ Enterprise Business Rules     │  │  │  │  ← Mais interno
-│  │  │  │        (Entities)            │  │  │  │
-│  │  │  └───────────────────────────────┘  │  │  │
-│  │  │         (Use Cases)                │  │  │
-│  │  └─────────────────────────────────────┘  │  │
-│  │        (Controllers, Presenters)          │  │
-│  └───────────────────────────────────────────┘  │
-│           (DB, UI, External Interfaces)         │
-└─────────────────────────────────────────────────┘
-
-      Dependências apontam sempre para DENTRO →
+```mermaid
+graph TD
+    subgraph L1["Frameworks & Drivers (Mais externo)"]
+        FW["DB, UI, External Interfaces"]
+    end
+    
+    subgraph L2["Interface Adapters"]
+        IA["Controllers, Presenters, Gateways"]
+    end
+    
+    subgraph L3["Application Business Rules"]
+        UC["Use Cases"]
+    end
+    
+    subgraph L4["Enterprise Business Rules (Mais interno)"]
+        ENT["Entities"]
+    end
+    
+    FW -.->|depende| IA
+    IA -.->|depende| UC
+    UC -.->|depende| ENT
+    
+    style L4 fill:#4a148c,stroke:#333,color:#fff
+    style L3 fill:#6a1b9a,stroke:#333,color:#fff
+    style L2 fill:#8e24aa,stroke:#333,color:#fff
+    style L1 fill:#ab47bc,stroke:#333,color:#fff
+    
+    note1["Dependências apontam sempre para DENTRO"]
+    
+    style note1 fill:#fff9c4,stroke:#f57f17
 ```
 
 ### Regras de Dependência
@@ -164,21 +162,35 @@ A Arquitetura Hexagonal complementa a Clean Architecture focando na separação 
 
 ### Conceitos Principais
 
-```
-                    ┌──────────────────────┐
-                    │                      │
-       HTTP ◄───────┤                      ├───────► Database
-                    │                      │
-                    │    APPLICATION       │
-       gRPC ◄───────┤      (Core)          ├───────► Email
-                    │                      │
-                    │                      │
-       CLI  ◄───────┤                      ├───────► Payment
-                    │                      │
-                    └──────────────────────┘
-
-         Adapters         Ports         Adapters
-         (Drivers)                    (Driven)
+```mermaid
+graph LR
+    subgraph Drivers["Primary Adapters (Drivers)"]
+        HTTP["HTTP"]
+        GRPC["gRPC"]
+        CLI["CLI"]
+    end
+    
+    subgraph Core["APPLICATION (Core)"]
+        PORTS["Ports<br/>(Interfaces)"]
+    end
+    
+    subgraph Driven["Secondary Adapters (Driven)"]
+        DB["Database"]
+        EMAIL["Email"]
+        PAY["Payment"]
+    end
+    
+    HTTP --> PORTS
+    GRPC --> PORTS
+    CLI --> PORTS
+    
+    PORTS --> DB
+    PORTS --> EMAIL
+    PORTS --> PAY
+    
+    style Core fill:#4caf50,stroke:#2e7d32,color:#fff
+    style Drivers fill:#2196f3,stroke:#1565c0,color:#fff
+    style Driven fill:#ff9800,stroke:#e65100,color:#fff
 ```
 
 ### Ports (Interfaces)
@@ -407,18 +419,26 @@ func (s *OrderPricingService) CalculateTotal(
 
 Cada módulo representa um Bounded Context:
 
-```
-┌─────────────────────┐   ┌──────────────────────┐   ┌─────────────────────┐
-│   User Context      │   │  Product Context     │   │   Order Context     │
-│                     │   │                      │   │                     │
-│ • User              │   │ • Product            │   │ • Order             │
-│ • Authentication    │   │ • Category           │   │ • OrderItem         │
-│ • Permissions       │   │ • Inventory          │   │ • Payment           │
-│                     │   │                      │   │                     │
-│ Linguagem Ubíqua:   │   │ Linguagem Ubíqua:    │   │ Linguagem Ubíqua:   │
-│ "Usuário"           │   │ "Produto"            │   │ "Pedido"            │
-│ "Autenticar"        │   │ "Estoque"            │   │ "Compra"            │
-└─────────────────────┘   └──────────────────────┘   └─────────────────────┘
+```mermaid
+graph LR
+    subgraph UC["User Context"]
+        U1["• User<br/>• Authentication<br/>• Permissions"]
+        U2["Linguagem Ubíqua:<br/>'Usuário'<br/>'Autenticar'"]
+    end
+    
+    subgraph PC["Product Context"]
+        P1["• Product<br/>• Category<br/>• Inventory"]
+        P2["Linguagem Ubíqua:<br/>'Produto'<br/>'Estoque'"]
+    end
+    
+    subgraph OC["Order Context"]
+        O1["• Order<br/>• OrderItem<br/>• Payment"]
+        O2["Linguagem Ubíqua:<br/>'Pedido'<br/>'Compra'"]
+    end
+    
+    style UC fill:#e3f2fd,stroke:#1976d2
+    style PC fill:#f3e5f5,stroke:#7b1fa2
+    style OC fill:#e8f5e9,stroke:#388e3c
 ```
 
 ---
@@ -427,71 +447,47 @@ Cada módulo representa um Bounded Context:
 
 ### Exemplo: Criar um Usuário via REST API
 
-```
-1. HTTP Request
-   └─► POST /api/v1/users
-       Body: {"name": "John", "email": "john@email.com"}
+```mermaid
+sequenceDiagram
+    participant C as Cliente
+    participant H as HTTP Handler
+    participant A as Application Service
+    participant CH as Command Handler
+    participant R as Repository
+    participant DB as MySQL
+    participant E as Event Bus
+    participant ES as Event Subscribers
 
-2. HTTP Handler (Adapter)
-   └─► Valida request
-   └─► Cria CreateUserCommand
-   
-3. Application Service
-   └─► Recebe command
-   └─► Delega para CreateUserHandler
-   
-4. Command Handler
-   └─► Valida regras de negócio
-   └─► Cria entidade User (Domain)
-   └─► Chama Repository.Save()
-   
-5. Repository (Infrastructure)
-   └─► Converte Entity para Model
-   └─► Salva no MySQL
-   
-6. Event Publisher
-   └─► Publica UserCreatedEvent
-   
-7. Event Subscribers
-   └─► EmailSubscriber: Envia email de boas-vindas
-   └─► AuditSubscriber: Registra log de auditoria
-   
-8. Response
-   └─► CreateUserHandler retorna UserDTO
-   └─► HTTP Handler converte para JSON
-   └─► Retorna 201 Created
+    C->>H: POST /api/v1/users<br/>{name, email}
+    
+    H->>H: Valida request
+    H->>A: CreateUserCommand
+    
+    A->>CH: Handle(command)
+    
+    CH->>CH: Valida regras de negócio
+    CH->>CH: Cria entidade User
+    CH->>R: Save(user)
+    
+    R->>R: Converte Entity para Model
+    R->>DB: INSERT
+    DB-->>R: OK
+    R-->>CH: OK
+    
+    CH->>E: Publish(UserCreatedEvent)
+    E-->>ES: UserCreatedEvent
+    
+    Note over ES: EmailSubscriber:<br/>Envia email de boas-vindas<br/><br/>AuditSubscriber:<br/>Registra log de auditoria
+    
+    CH-->>A: UserDTO
+    A-->>H: UserDTO
+    H->>H: Converte para JSON
+    H-->>C: 201 Created
 ```
 
-### Diagrama de Sequência
+### Diagrama de Sequência Detalhado
 
-```
-Cliente    HTTP       App        Command      Repository   EventBus
-  │       Handler    Service     Handler                     
-  │          │          │            │             │           │
-  ├─POST────►│          │            │             │           │
-  │          │          │            │             │           │
-  │          ├─Command─►│            │             │           │
-  │          │          │            │             │           │
-  │          │          ├─Handle────►│             │           │
-  │          │          │            │             │           │
-  │          │          │            ├─Save(user)─►│           │
-  │          │          │            │             │           │
-  │          │          │            │             ├─INSERT───►│ MySQL
-  │          │          │            │             │◄──────────┤
-  │          │          │            │◄────────────┤           │
-  │          │          │            │                         │
-  │          │          │            ├─Publish(event)─────────►│
-  │          │          │            │                         │
-  │          │          │◄───────────┤                         │
-  │          │◄─────────┤                                      │
-  │◄─201─────┤                                                 │
-  │          │                                                 │
-  │          │                                    ┌────────────┴─────┐
-  │          │                                    │  Event Handlers  │
-  │          │                                    │  • Send Email    │
-  │          │                                    │  • Audit Log     │
-  │          │                                    └──────────────────┘
-```
+> **Nota:** O diagrama de sequência detalhado já foi substituído pela versão Mermaid na seção anterior.
 
 ---
 
