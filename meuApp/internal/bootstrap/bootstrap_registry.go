@@ -134,15 +134,24 @@ func registerModules(registry *container.ModuleRegistry, db *gorm.DB, eventBus *
 		modules.NewOrderModule(db, eventBus, logger), // Requires User + Product
 	}
 
+	//contador de módulos habilitados
+	enabledCount := 0
+
 	// Register each module
 	for _, module := range applicationModules {
-		log.Printf("  → Registering module: %s", module.Name())
-		if err := module.Register(registry); err != nil {
-			return fmt.Errorf("failed to register module %s: %w", module.Name(), err)
+
+		if framework.IsEnabled("modules", module.Name()) {
+			log.Printf("  → Registering module: %s", module.Name())
+			enabledCount++
+			if err := module.Register(registry); err != nil {
+				return fmt.Errorf("failed to register module %s: %w", module.Name(), err)
+			}
+
 		}
+
 	}
 
-	log.Printf("✅ All %d modules registered successfully", len(applicationModules))
+	log.Printf("✅ All %d modules registered successfully", enabledCount)
 	return nil
 }
 
