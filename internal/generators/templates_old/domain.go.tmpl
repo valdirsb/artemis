@@ -1,0 +1,18 @@
+package domain
+
+type {{.EntityName}} struct {
+    ID        string `json:"id"`
+    CreatedAt time.Time `json:"created_at"`
+    UpdatedAt time.Time `json:"updated_at"`
+    // Add other fields specific to the {{.EntityName}} entity
+}
+
+func New{{.EntityName}}(id string) *{{.EntityName}} {
+    return &{{.EntityName}}{
+        ID:        id,
+        CreatedAt: time.Now(),
+        UpdatedAt: time.Now(),
+    }
+}
+
+// Add methods related to {{.EntityName}} domain logic here

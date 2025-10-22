@@ -1,26 +1,23 @@
-# 🏹 Artemis Go Framework
-**Build monoliths, modularly.**
+# 🏛️ {{.Name}}
 
 <div align="center">
-
-![Logo do Projeto](logo_artemis.png)
-<br>
-**Framework modular para desenvolvimento de aplicações Go enterprise**
 
 ![Artemis Framework](https://img.shields.io/badge/Artemis-Framework-blue)
 ![Version](https://img.shields.io/badge/version-1.0.0-green)
 ![Go](https://img.shields.io/badge/Go-1.21+-00ADD8?logo=go)
 ![Architecture](https://img.shields.io/badge/Architecture-Clean%20%7C%20Hexagonal%20%7C%20DDD-orange)
 
-[📚 Documentação Completa](docs/framework/README.md) • [🚀 Início Rápido](docs/framework/02-quickstart.md) • [🏗️ Arquitetura](docs/ARCHITECTURE.md)
+**Framework modular para desenvolvimento de aplicações Go enterprise**
+
+[📚 Documentação Completa](docs/framework/README.md) • [🚀 Início Rápido](docs/framework/02-quickstart.md) • [🏗️ Arquitetura](docs/framework/04-architecture.md)
 
 </div>
 
 ---
 
-## 🎯 O que é o Artemis?
+## 🎯 O que é o {{.Name}}?
 
-O **Artemis Framework** é um framework empresarial em Go que implementa Clean Architecture, Hexagonal Architecture (Ports & Adapters), Domain-Driven Design (DDD) e CQRS. Ele fornece uma base sólida e padronizada para desenvolvimento de aplicações complexas e escaláveis.
+O **{{.Name}}** é uma aplicação desenvolvida usando o **Artemis Framework**, que implementa Clean Architecture, Hexagonal Architecture (Ports & Adapters), Domain-Driven Design (DDD) e CQRS. Ele fornece uma base sólida e padronizada para desenvolvimento de aplicações complexas e escaláveis.
 
 ### ⭐ Principais Características
 
@@ -35,83 +32,43 @@ O **Artemis Framework** é um framework empresarial em Go que implementa Clean A
 
 ---
 
-## ✨ Recursos
-- ✅ Estrutura modular de alto desempenho
-- ✅ CLI poderoso para geração de código  
-- ✅ Comando `artemis new` para criar projetos
-- ✅ Comando `artemis make:module` para gerar módulos
-- ✅ Sistema de templates flexível
-- 🚧 Suporte a múltiplas tecnologias (REST, gRPC, GraphQL, etc)
-- 🚧 Facilidade de configuração e extensibilidade
+## 🚀 Início Rápido
 
-## 🚀 Instalação
+### Instalação
 
-### Via Go Install (Recomendado)
 ```bash
-go install github.com/valdirsb/artemis@latest
+# Clone o repositório
+git clone <repository-url> {{.Name}}
+cd {{.Name}}
+
+# Configure o ambiente
+cp .env.example .env
+
+# Instale dependências
+go mod download
+
+# Execute setup
+make setup
+
+# Inicie a aplicação
+make run
 ```
 
-### Via Build Manual
+### Primeiro Módulo
+
 ```bash
-git clone https://github.com/valdirsb/artemis.git
-cd artemis
-go build -o bin/artemis .
-# Copiar o binário para seu PATH
+# Crie um novo módulo
+make module name=blog
+
+# Estrutura criada:
+# internal/modules/blog/
+#   ├── domain/
+#   ├── application/
+#   ├── adapters/
+#   └── repository/
 ```
 
-## 🧩 Como usar
-
-### Criando um novo projeto
-```bash
-artemis new myapp
-cd myapp
-```
-
-### Gerando módulos
-```bash
-artemis make:module users    # Gera módulo completo
-artemis make:migration create_users_table
-```
-
-## 🎯 Comandos Disponíveis
-
-| Comando | Descrição | Exemplo |
-|---------|-----------|---------|
-| `artemis new <name>` | Cria novo projeto | `artemis new myapp` |
-| `artemis make:module <name>` | Gera módulo | `artemis make:module users` |
-| `artemis make:migration <name>` | Gera migration | `artemis make:migration create_users` |
-
-## 📁 Estrutura Gerada
-
-## 📦 Estrutura
-```
-meuApp/
-├── docs/
-│   └── framework/         # 📚 DOCUMENTAÇÃO COMPLETA
-│       ├── README.md      # Índice da documentação
-│       ├── 01-overview.md
-│       ├── 02-quickstart.md
-│       └── ...
-│
-├── internal/
-│   ├── bootstrap/         # Inicialização e DI
-│   └── modules/           # Módulos da aplicação
-│       ├── user/
-│       ├── product/
-│       └── order/
-│
-├── pkg/                   # Código compartilhável
-│   ├── adapters/         # Database, HTTP, Logger
-│   ├── container/        # DI Container + Registry
-│   ├── contracts/        # Interfaces
-│   ├── events/           # Event Bus
-│   └── framework/        # Core do framework
-│
-├── proto/                # Protocol Buffers
-├── tests/                # Testes E2E
-├── framework.yaml        # Configuração do framework
-└── main.go              # Entry point
-```
+👉 **[Veja o tutorial completo →](docs/framework/02-quickstart.md)**
 
 ---
 
@@ -151,29 +108,20 @@ meuApp/
 
 ## 🏛️ Arquitetura
 
-```mermaid
-
-graph TD
-    A["Presentation Layer<br/>(HTTP Handlers, gRPC Services)"]
-    B["Application Layer<br/>(Commands, Queries, Application Services)"]
-    C["Domain Layer<br/>(Entities, Value Objects, Domain Events)"]
-    D["Infrastructure Layer<br/>(Repositories, Event Bus, External Services)"]
-
-    A --> B
-    B --> C
-    C --> D
-
-    %% Estilos visuais
-    classDef layer1 fill:#f2f2ff,stroke:#333,stroke-width:2px;
-    classDef layer2 fill:#e6f7ff,stroke:#333,stroke-width:2px;
-    classDef layer3 fill:#eaffea,stroke:#333,stroke-width:2px;
-    classDef layer4 fill:#fff0e6,stroke:#333,stroke-width:2px;
-
-    class A layer1
-    class B layer2
-    class C layer3
-    class D layer4
-
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Presentation Layer                       │
+│              (HTTP Handlers, gRPC Services)                  │
+├─────────────────────────────────────────────────────────────┤
+│                    Application Layer                         │
+│        (Commands, Queries, Application Services)             │
+├─────────────────────────────────────────────────────────────┤
+│                      Domain Layer                            │
+│         (Entities, Value Objects, Domain Events)             │
+├─────────────────────────────────────────────────────────────┤
+│                   Infrastructure Layer                       │
+│     (Repositories, Event Bus, External Services)             │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ### Princípios Fundamentais
@@ -183,10 +131,40 @@ graph TD
 - **Modularidade** - Módulos independentes e desacoplados
 - **Testabilidade** - Fácil testar em todos os níveis
 
-👉 **[Veja a arquitetura completa →](docs/framework/04-architecture.md)**
-
 ---
 
+## 📁 Estrutura do Projeto
+
+```
+{{.Name}}/
+├── docs/
+│   └── framework/         # 📚 DOCUMENTAÇÃO COMPLETA
+│       ├── README.md      # Índice da documentação
+│       ├── 01-overview.md
+│       ├── 02-quickstart.md
+│       └── ...
+│
+├── internal/
+│   ├── bootstrap/         # Inicialização e DI
+│   └── modules/           # Módulos da aplicação
+│       ├── user/
+│       ├── product/
+│       └── order/
+│
+├── pkg/                   # Código compartilhável
+│   ├── adapters/         # Database, HTTP, Logger
+│   ├── container/        # DI Container + Registry
+│   ├── contracts/        # Interfaces
+│   ├── events/           # Event Bus
+│   └── framework/        # Core do framework
+│
+├── proto/                # Protocol Buffers
+├── tests/                # Testes E2E
+├── framework.yaml        # Configuração do framework
+└── main.go              # Entry point
+```
+
+---
 
 ## 🔥 Recursos Principais
 
@@ -266,6 +244,52 @@ go test -cover ./...
 
 ---
 
+## 📖 Exemplos
+
+### Criar um Usuário
+
+```bash
+curl -X POST http://localhost:8080/api/v1/users \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "John Doe",
+    "email": "john@example.com",
+    "password": "secret123"
+  }'
+```
+
+### Listar Usuários
+
+```bash
+curl http://localhost:8080/api/v1/users?page=1&page_size=20
+```
+
+---
+
+## ⚙️ Comandos Úteis
+
+```bash
+# Build
+make build
+
+# Executar
+make run
+
+# Testes
+make test
+
+# Migrações
+make migrate
+
+# Gerar código gRPC
+make proto
+
+# Limpar
+make clean
+```
+
+---
+
 ## 📚 Documentação Adicional
 
 - **[ADRs](docs/adr/README.md)** - Architecture Decision Records
@@ -294,26 +318,22 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 
 ## 👥 Equipe
 
-Desenvolvido com ❤️ pela Equipe de Desenvolvimento Artemis
+Desenvolvido com ❤️ pela Equipe de Desenvolvimento
 
 ---
 
 ## 📞 Suporte
 
-- 📧 Email: valdirsb.dev@gmail.com
-<!-- - 💬 Slack: #artemis-framework -->
+- 📧 Email: devteam@{{.Name}}.com
+- 💬 Slack: #{{.Name}}-support
 - 📖 Wiki: [Documentação Completa](docs/framework/README.md)
 
 ---
 
 <div align="center">
 
-**[⬆️ Voltar ao topo](#Artemis-Go-Framework)**
+**[⬆️ Voltar ao topo](#-{{.Name}})**
 
-**[📚 Documentação Completa](docs/framework/README.md)** | **[🚀 Início Rápido](docs/framework/02-quickstart.md)** | **[🏗️ Arquitetura](docs/ARCHITECTURE.md)**
+**[📚 Documentação Completa](docs/framework/README.md)** | **[🚀 Início Rápido](docs/framework/02-quickstart.md)** | **[🏗️ Arquitetura](docs/framework/04-architecture.md)**
 
 </div>
-
-
----
-

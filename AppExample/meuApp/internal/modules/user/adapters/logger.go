@@ -1,0 +1,50 @@
+package adapters
+
+import (
+	"fmt"
+	"log"
+
+	"meuApp/pkg/contracts"
+)
+
+// StructuredLogger implementa a interface contracts.Logger
+type StructuredLogger struct{}
+
+func NewStructuredLogger() contracts.Logger {
+	return &StructuredLogger{}
+}
+
+func (l *StructuredLogger) Debug(msg string, fields ...contracts.Field) {
+	l.logWithFields("DEBUG", msg, fields...)
+}
+
+func (l *StructuredLogger) Info(msg string, fields ...contracts.Field) {
+	l.logWithFields("INFO", msg, fields...)
+}
+
+func (l *StructuredLogger) Warn(msg string, fields ...contracts.Field) {
+	l.logWithFields("WARN", msg, fields...)
+}
+
+func (l *StructuredLogger) Error(msg string, fields ...contracts.Field) {
+	l.logWithFields("ERROR", msg, fields...)
+}
+
+func (l *StructuredLogger) Fatal(msg string, fields ...contracts.Field) {
+	l.logWithFields("FATAL", msg, fields...)
+	panic(msg)
+}
+
+func (l *StructuredLogger) With(fields ...contracts.Field) contracts.Logger {
+	// Para simplicidade, retorna a mesma instância
+	// Em uma implementação real, retornaria um novo logger com campos pré-configurados
+	return l
+}
+
+func (l *StructuredLogger) logWithFields(level, msg string, fields ...contracts.Field) {
+	fieldStr := ""
+	for _, f := range fields {
+		fieldStr += fmt.Sprintf(" %s=%v", f.Key, f.Value)
+	}
+	log.Printf("[%s] %s%s\n", level, msg, fieldStr)
+}

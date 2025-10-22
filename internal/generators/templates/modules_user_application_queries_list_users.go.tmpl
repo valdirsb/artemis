@@ -1,0 +1,57 @@
+package queries
+
+import (
+	"context"
+
+	"{{ .Name }}/internal/modules/user/domain"
+	"{{ .Name }}/internal/modules/user/ports"
+	"{{ .Name }}/pkg/contracts"
+)
+
+type ListUsersQuery struct {
+	Page     int
+	PageSize int
+}
+
+type ListUsersResult struct {
+	Users      []*domain.User
+	Total      int64
+	Page       int
+	PageSize   int
+	TotalPages int
+}
+
+type ListUsersHandler struct {
+	userRepo ports.UserRepository
+	logger   contracts.Logger
+}
+
+func NewListUsersHandler(userRepo ports.UserRepository, logger contracts.Logger) *ListUsersHandler {
+	return &ListUsersHandler{userRepo: userRepo, logger: logger}
+}
+
+func (h *ListUsersHandler) Handle(ctx context.Context, query ListUsersQuery) (*ListUsersResult, error) {
+	if query.Page < 1 {
+		query.Page = 1
+	}
+	if query.PageSize < 1 {
+		query.PageSize = 10
+	}
+	if query.PageSize > 100 {
+		query.PageSize = 100
+	}
+
+	result, err := h.userRepo.ListPaginated(ctx, query.Page, query.PageSize)
+	if err != nil {
+		h.logger.Error("Failed to list users", contracts.Field{Key: "error", Value: err})
+		return nil, err
+	}
+
+	return &ListUsersResult{
+		Users:      result.Items,
+		Total:      result.TotalItems,
+		Page:       result.Page,
+		PageSize:   result.PageSize,
+		TotalPages: result.TotalPages,
+	}, nil
+}

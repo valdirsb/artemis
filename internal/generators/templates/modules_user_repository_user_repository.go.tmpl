@@ -1,0 +1,164 @@
+package repository
+
+import (
+	"context"
+	"fmt"
+
+	"{{ .Name }}/internal/modules/user/domain"
+	"{{ .Name }}/internal/modules/user/ports"
+
+	"gorm.io/gorm"
+)
+
+// mysqlUserRepository implementa a interface UserRepository usando MySQL/GORM
+type mysqlUserRepository struct {
+	db *gorm.DB
+}
+
+// NewMySQLUserRepository cria uma nova instância do repositório MySQL
+func NewMySQLUserRepository(db *gorm.DB) ports.UserRepository {
+	return &mysqlUserRepository{
+		db: db,
+	}
+}
+
+// Create cria um novo usuário no banco de dados
+func (r *mysqlUserRepository) Create(ctx context.Context, user *domain.User) error {
+	userModel := &UserModel{}
+	userModel.FromDomain(user)
+
+	if err := r.db.WithContext(ctx).Create(userModel).Error; err != nil {
+		return fmt.Errorf("failed to create user: %w", err)
+	}
+
+	return nil
+}
+
+// GetByID busca um usuário pelo ID
+func (r *mysqlUserRepository) GetByID(ctx context.Context, id string) (*domain.User, error) {
+	var userModel UserModel
+
+	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&userModel).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("user not found")
+		}
+		return nil, fmt.Errorf("failed to get user by ID: %w", err)
+	}
+
+	return userModel.ToDomain(), nil
+}
+
+// GetByEmail busca um usuário pelo email
+func (r *mysqlUserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
+	var userModel UserModel
+
+	if err := r.db.WithContext(ctx).Where("email = ?", email).First(&userModel).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("user not found")
+		}
+		return nil, fmt.Errorf("failed to get user by email: %w", err)
+	}
+
+	return userModel.ToDomain(), nil
+}
+
+// List retorna uma lista de usuários com paginação
+func (r *mysqlUserRepository) List(ctx context.Context, offset, limit int) ([]*domain.User, error) {
+	var userModels []UserModel
+
+	if err := r.db.WithContext(ctx).
+		Offset(offset).
+		Limit(limit).
+		Order("created_at DESC").
+		Find(&userModels).Error; err != nil {
+		return nil, fmt.Errorf("failed to list users: %w", err)
+	}
+
+	users := make([]*domain.User, len(userModels))
+	for i, model := range userModels {
+		users[i] = model.ToDomain()
+	}
+
+	return users, nil
+}
+
+// Update atualiza um usuário existente
+func (r *mysqlUserRepository) Update(ctx context.Context, user *domain.User) error {
+	userModel := &UserModel{}
+	userModel.FromDomain(user)
+
+	result := r.db.WithContext(ctx).Where("id = ?", user.ID).Updates(userModel)
+	if result.Error != nil {
+		return fmt.Errorf("failed to update user: %w", result.Error)
+	}
+
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("user not found")
+	}
+
+	return nil
+}
+
+// Delete remove um usuário do banco de dados
+func (r *mysqlUserRepository) Delete(ctx context.Context, id string) error {
+	result := r.db.WithContext(ctx).Where("id = ?", id).Delete(&UserModel{})
+	if result.Error != nil {
+		return fmt.Errorf("failed to delete user: %w", result.Error)
+	}
+
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("user not found")
+	}
+
+	return nil
+}
+
+// ListPaginated lista usuários com paginação
+func (r *mysqlUserRepository) ListPaginated(ctx context.Context, page, pageSize int) (*ports.PaginatedUserResult, error) {
+	query := r.db.WithContext(ctx).Model(&UserModel{})
+
+	// Contar total de registros
+	var totalItems int64
+	if err := query.Count(&totalItems).Error; err != nil {
+		return nil, fmt.Errorf("failed to count users: %w", err)
+	}
+
+	// Aplicar valores padrão
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 10
+	}
+
+	offset := (page - 1) * pageSize
+
+	var userModels []UserModel
+	if err := query.
+		Offset(offset).
+		Limit(pageSize).
+		Order("created_at DESC").
+		Find(&userModels).Error; err != nil {
+		return nil, fmt.Errorf("failed to list users: %w", err)
+	}
+
+	// Converter models para domain
+	users := make([]*domain.User, len(userModels))
+	for i, model := range userModels {
+		users[i] = model.ToDomain()
+	}
+
+	// Calcular total de páginas
+	totalPages := int(totalItems) / pageSize
+	if int(totalItems)%pageSize != 0 {
+		totalPages++
+	}
+
+	return &ports.PaginatedUserResult{
+		Items:      users,
+		TotalItems: totalItems,
+		Page:       page,
+		PageSize:   pageSize,
+		TotalPages: totalPages,
+	}, nil
+}

@@ -1,0 +1,25 @@
+package adapters
+
+import (
+	"context"
+	"fmt"
+
+	"{{ .Name }}/internal/modules/user/ports"
+)
+
+// MockEmailService implementa a interface EmailService para desenvolvimento
+type MockEmailService struct{}
+
+func NewMockEmailService() ports.EmailService {
+	return &MockEmailService{}
+}
+
+func (s *MockEmailService) SendWelcomeEmail(ctx context.Context, email, username string) error {
+	fmt.Printf("📧 [MOCK] Sending welcome email to %s (user: %s)\n", email, username)
+	return nil
+}
+
+func (s *MockEmailService) SendPasswordResetEmail(ctx context.Context, userID, email, resetToken string) error {
+	fmt.Printf("📧 [MOCK] Sending password reset email to %s (user: %s, token: %s)\n", email, userID, resetToken)
+	return nil
+}

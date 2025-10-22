@@ -1,0 +1,47 @@
+framework:
+  name: "{{.Name}}"
+  version: "1.0.0"
+
+core:
+  http_server: true
+  dependency_injection: true
+  event_system: true
+  logging: true
+  database_migrations: true
+
+database:
+  mysql: true
+  postgresql: false
+  mongodb: false
+  sqlite: false
+
+cache:
+  redis: false
+  memcached: false
+  in_memory: false
+
+protocols:
+  http: true
+  grpc: true
+  websockets: false
+  graphql: false
+
+integrations:
+  jwt: true
+  oauth2: false
+  firebase_auth: false
+  stripe: false
+  google_maps: false
+  
+security:
+  cors: true
+  rate_limiting: false
+
+development:
+  swagger: true
+  debug_mode: true
+
+modules:
+  user: true
+  product: true
+  order: true
