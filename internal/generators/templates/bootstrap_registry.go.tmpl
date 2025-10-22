@@ -130,8 +130,8 @@ func registerModules(registry *container.ModuleRegistry, db *gorm.DB, eventBus *
 	// Create modules (ORDER MATTERS - dependencies!)
 	applicationModules := []frameworkInterfaces.Module{
 		modules.NewUserModule(db, eventBus),
-		modules.NewProductModule(db, eventBus, logger),
-		modules.NewOrderModule(db, eventBus, logger), // Requires User + Product
+		// modules.NewProductModule(db, eventBus, logger),
+		// modules.NewOrderModule(db, eventBus, logger), // Requires User + Product
 	}
 
 	//contador de módulos habilitados

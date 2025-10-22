@@ -3,10 +3,10 @@ package services
 import (
 	"context"
 
-	"{{.Name}}/internal/modules/user/application/commands"
-	"{{.Name}}/internal/modules/user/application/queries"
-	"{{.Name}}/internal/modules/user/domain"
-	"{{.Name}}/internal/modules/user/ports"
+	"{{ .Name }}/internal/modules/user/application/commands"
+	"{{ .Name }}/internal/modules/user/application/queries"
+	"{{ .Name }}/internal/modules/user/domain"
+	"{{ .Name }}/internal/modules/user/ports"
 )
 
 type UserApplicationService struct {
@@ -75,7 +75,6 @@ func (s *UserApplicationService) ListUsers(ctx context.Context, page, pageSize i
 		TotalPages: result.TotalPages,
 	}, nil
 }
-
 func (s *UserApplicationService) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
 	query := queries.GetUserByEmailQuery{Email: email}
 	return s.getUserByEmailHandler.Handle(ctx, query)

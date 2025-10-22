@@ -33,6 +33,6 @@ func init() {
 
 	// Adiciona comandos
 	rootCmd.AddCommand(newCmd)
-	rootCmd.AddCommand(makeCmd)
-	rootCmd.AddCommand(serveCmd)
+	rootCmd.AddCommand(makeModuleCmd)
+	// rootCmd.AddCommand(makeMigrationCmd)
 }

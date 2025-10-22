@@ -3,12 +3,12 @@ package commands
 import (
 	"context"
 
-	"{{.Name}}/internal/modules/user"
-	"{{.Name}}/internal/modules/user/domain"
-	"{{.Name}}/internal/modules/user/ports"
-	"{{.Name}}/pkg/contracts"
-	apperrors "{{.Name}}/pkg/errors"
-	"{{.Name}}/pkg/events"
+	"{{ .Name }}/internal/modules/user"
+	"{{ .Name }}/internal/modules/user/domain"
+	"{{ .Name }}/internal/modules/user/ports"
+	"{{ .Name }}/pkg/contracts"
+	apperrors "{{ .Name }}/pkg/errors"
+	"{{ .Name }}/pkg/events"
 
 	"github.com/google/uuid"
 )
@@ -58,85 +58,67 @@ func (h *CreateUserHandler) Handle(ctx context.Context, cmd CreateUserCommand) (
 	if cmd.Email == "" {
 		return nil, user.ErrInvalidEmail
 	}
-
-	if cmd.Username == "" {
-		return nil, user.ErrInvalidUsername
-	}
-
-	if cmd.Password == "" {
+	if len(cmd.Password) < 6 {
 		return nil, user.ErrInvalidPassword
 	}
-
-	// Verificar se o email já existe
-	existsByEmail, err := h.userRepo.ExistsByEmail(ctx, cmd.Email)
-	if err != nil {
-		h.logger.Error("Failed to check if email exists", contracts.Field{Key: "error", Value: err.Error()})
-		return nil, err
+	if cmd.Username == "" {
+		return nil, user.ErrInvalidName
 	}
 
-	if existsByEmail {
-		return nil, user.ErrEmailAlreadyExists
+	// Verificar se email já existe
+	existingUser, err := h.userRepo.GetByEmail(ctx, cmd.Email)
+	if err == nil && existingUser != nil {
+		return nil, user.NewEmailAlreadyExistsError(cmd.Email)
 	}
 
-	// Verificar se o username já existe
-	existsByUsername, err := h.userRepo.ExistsByUsername(ctx, cmd.Username)
-	if err != nil {
-		h.logger.Error("Failed to check if username exists", contracts.Field{Key: "error", Value: err.Error()})
-		return nil, err
-	}
-
-	if existsByUsername {
-		return nil, user.ErrUsernameAlreadyExists
-	}
-
-	// Gerar ID único para o usuário
 	userID := uuid.New().String()
 
 	// Criar entidade de domínio
-	user, err := domain.NewUser(userID, cmd.Username, cmd.Email)
+	domainUser, err := domain.NewUser(userID, cmd.Username, cmd.Email)
 	if err != nil {
-		h.logger.Error("Failed to create user domain entity", contracts.Field{Key: "error", Value: err.Error()})
-		return nil, err
+		h.logger.Error("Failed to create user domain entity", contracts.Field{Key: "error", Value: err})
+		return nil, apperrors.WrapError(err, "invalid user data")
 	}
 
 	// Hash da senha
 	hashedPassword, err := h.passwordHasher.Hash(cmd.Password)
 	if err != nil {
-		h.logger.Error("Failed to hash password", contracts.Field{Key: "error", Value: err.Error()})
-		return nil, apperrors.NewInternalError("failed to process password", err)
+		h.logger.Error("Failed to hash password", contracts.Field{Key: "error", Value: err})
+		return nil, apperrors.NewInfrastructureError("failed to process password", err)
 	}
 
-	user.Password = hashedPassword
+	// Criar aggregate
+	userAggregate := domain.NewUserAggregate(domainUser)
+	userAggregate.SetPassword(hashedPassword)
 
-	// Salvar no repositório
-	if err := h.userRepo.Create(ctx, user); err != nil {
-		h.logger.Error("Failed to create user in repository", contracts.Field{Key: "error", Value: err.Error()})
-		return nil, err
+	if err := userAggregate.IsValid(); err != nil {
+		return nil, apperrors.WrapError(err, "invalid user aggregate")
 	}
 
-	// Publicar evento de usuário criado
+	// Persistir
+	if err := h.userRepo.Create(ctx, userAggregate.GetUser()); err != nil {
+		h.logger.Error("Failed to create user in repository", contracts.Field{Key: "error", Value: err})
+		return nil, apperrors.NewInfrastructureError("failed to create user", err)
+	}
+
+	// ✨ Publicar evento type-safe
 	if h.typedPublisher != nil {
-		userCreatedEvent := events.UserCreatedEvent{
-			UserID:   user.ID,
-			Username: user.Username,
-			Email:    user.Email,
-		}
-
-		if err := h.typedPublisher.Publish(ctx, userCreatedEvent); err != nil {
-			h.logger.Error("Failed to publish UserCreatedEvent", contracts.Field{Key: "error", Value: err.Error()})
-			// Não retornamos erro aqui pois o usuário foi criado com sucesso
+		if err := h.typedPublisher.PublishUserCreated(ctx, events.UserCreatedEvent{
+			UserID:   userID,
+			Username: cmd.Username,
+			Email:    cmd.Email,
+		}); err != nil {
+			h.logger.Warn("Failed to publish user created event", contracts.Field{Key: "error", Value: err})
 		}
 	}
 
-	// Enviar email de boas-vindas (opcional, não deve falhar a criação)
-	if h.emailService != nil {
-		if err := h.emailService.SendWelcomeEmail(ctx, user.ID, user.Email); err != nil {
-			h.logger.Error("Failed to send welcome email", contracts.Field{Key: "error", Value: err.Error()})
-			// Não retornamos erro aqui pois o usuário foi criado com sucesso
+	// Enviar email de boas-vindas (async)
+	go func() {
+		if err := h.emailService.SendWelcomeEmail(context.Background(), userID, cmd.Email); err != nil {
+			h.logger.Warn("Failed to send welcome email", contracts.Field{Key: "error", Value: err})
 		}
-	}
+	}()
 
-	h.logger.Info("User created successfully", contracts.Field{Key: "userID", Value: user.ID})
-
-	return user, nil
+	h.logger.Info("User created successfully", contracts.Field{Key: "user_id", Value: userID})
+	return userAggregate.GetUser(), nil
 }

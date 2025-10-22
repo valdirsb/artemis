@@ -8,14 +8,8 @@ import (
 	"github.com/valdirsb/artemis/internal/generators"
 )
 
-var makeCmd = &cobra.Command{
-	Use:   "make",
-	Short: "Gera componentes do projeto",
-	Long:  `Gera diferentes tipos de componentes como módulos, migrations, etc.`,
-}
-
 var makeModuleCmd = &cobra.Command{
-	Use:   "module [name]",
+	Use:   "make:module [name]",
 	Short: "Gera um novo módulo",
 	Long: `Gera um novo módulo com toda a estrutura necessária:
   • Domain (entidades e repositório)
@@ -43,32 +37,11 @@ Exemplo:
 	},
 }
 
-var makeMigrationCmd = &cobra.Command{
-	Use:   "migration [name]",
-	Short: "Gera uma nova migration",
-	Long: `Gera uma nova migration com timestamp.
-
-Exemplo:
-  artemis make:migration create_users_table
-  artemis make:migration add_email_to_users`,
-	Args: cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		migrationName := args[0]
-
-		fmt.Printf("📝 Gerando migration: %s\n", migrationName)
-
-		generator := generators.NewMigrationGenerator()
-		if err := generator.Generate(migrationName); err != nil {
-			return fmt.Errorf("erro ao gerar migration: %w", err)
-		}
-
-		fmt.Printf("✅ Migration '%s' gerada com sucesso!\n", migrationName)
-
-		return nil
-	},
-}
+var (
+	crud bool
+)
 
 func init() {
-	makeCmd.AddCommand(makeModuleCmd)
-	makeCmd.AddCommand(makeMigrationCmd)
+
+	makeModuleCmd.Flags().BoolVarP(&crud, "crud", "c", false, "Generate CRUD endpoints")
 }

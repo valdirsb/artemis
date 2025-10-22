@@ -1,0 +1,149 @@
+package middleware
+
+import (
+	"encoding/json"
+	"net/http"
+	"time"
+
+	"{{.Name}}/pkg/contracts"
+	apperrors "{{.Name}}/pkg/errors"
+
+	"github.com/gin-gonic/gin"
+)
+
+// LoggerMiddleware logs the details of each HTTP request
+func LoggerMiddleware(logger contracts.Logger) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+		path := c.Request.URL.Path
+		raw := c.Request.URL.RawQuery
+
+		// Process request
+		c.Next()
+
+		// Log after request
+		latency := time.Since(start)
+		statusCode := c.Writer.Status()
+		method := c.Request.Method
+		clientIP := c.ClientIP()
+
+		if raw != "" {
+			path = path + "?" + raw
+		}
+
+		logger.Info("HTTP Request",
+			contracts.Field{Key: "method", Value: method},
+			contracts.Field{Key: "path", Value: path},
+			contracts.Field{Key: "status", Value: statusCode},
+			contracts.Field{Key: "latency", Value: latency.String()},
+			contracts.Field{Key: "client_ip", Value: clientIP},
+		)
+	}
+}
+
+// CORSMiddleware handles Cross-Origin Resource Sharing
+func CORSMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+		c.Header("Access-Control-Expose-Headers", "Content-Length")
+		c.Header("Access-Control-Allow-Credentials", "true")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(http.StatusNoContent)
+			return
+		}
+
+		c.Next()
+	}
+}
+
+// ErrorMiddleware handles application errors
+func ErrorMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Next()
+
+		// Handle errors from handlers
+		if len(c.Errors) > 0 {
+			err := c.Errors.Last().Err
+
+			if appErr, ok := apperrors.AsAppError(err); ok {
+				RespondWithAppError(c.Writer, appErr)
+			} else {
+				RespondWithError(c.Writer, http.StatusInternalServerError, "Internal Server Error", err.Error())
+			}
+		}
+	}
+}
+
+// AuthMiddleware checks for authentication tokens in the request
+func AuthMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		token := c.GetHeader("Authorization")
+		if token == "" {
+			RespondWithError(c.Writer, http.StatusUnauthorized, "Unauthorized", "Authorization header is required")
+			c.Abort()
+			return
+		}
+
+		// TODO: Add JWT token validation logic here
+		// For now, just check if token is not empty
+
+		c.Next()
+	}
+}
+
+// RecoveryMiddleware recovers from panics
+func RecoveryMiddleware(logger contracts.Logger) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		defer func() {
+			if err := recover(); err != nil {
+				logger.Error("Panic recovered",
+					contracts.Field{Key: "error", Value: err},
+					contracts.Field{Key: "path", Value: c.Request.URL.Path},
+					contracts.Field{Key: "method", Value: c.Request.Method},
+				)
+
+				RespondWithError(c.Writer, http.StatusInternalServerError, "Internal Server Error", "An unexpected error occurred")
+				c.Abort()
+			}
+		}()
+
+		c.Next()
+	}
+}
+
+// Response helpers
+
+// ErrorResponse represents an error response
+type ErrorResponse struct {
+	Error   string            `json:"error"`
+	Message string            `json:"message"`
+	Details map[string]string `json:"details,omitempty"`
+}
+
+// RespondWithJSON sends a JSON response
+func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
+	response, _ := json.Marshal(payload)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	w.Write(response)
+}
+
+// RespondWithError sends an error response
+func RespondWithError(w http.ResponseWriter, code int, error, message string) {
+	RespondWithJSON(w, code, ErrorResponse{
+		Error:   error,
+		Message: message,
+	})
+}
+
+// RespondWithAppError sends an AppError response
+func RespondWithAppError(w http.ResponseWriter, err *apperrors.AppError) {
+	RespondWithJSON(w, err.HTTPStatusCode(), ErrorResponse{
+		Error:   string(err.Type),
+		Message: err.Message,
+		Details: err.Details,
+	})
+}

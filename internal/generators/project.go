@@ -1,6 +1,7 @@
 package generators
 
 import (
+	"embed"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -8,7 +9,12 @@ import (
 	// "github.com/valdirsb/artemis/internal/templates"
 
 	"text/template"
+
+	"github.com/valdirsb/artemis/internal/utils"
 )
+
+//go:embed templates/*.tmpl
+var templatesFS embed.FS
 
 type Project struct {
 	Name string
@@ -36,7 +42,6 @@ func (g *ProjectGenerator) Generate(projectPath, projectName string) error {
 	dirs := []string{
 		// Internal structure
 		"internal/bootstrap",
-		"internal/routes",
 		"internal/modules",
 
 		// User module
@@ -105,7 +110,7 @@ func (g *ProjectGenerator) Generate(projectPath, projectName string) error {
 	// Criar diretórios
 	for _, dir := range dirs {
 		dirPath := filepath.Join(projectPath, dir)
-		if err := os.MkdirAll(dirPath, 0755); err != nil {
+		if err := utils.CreateDir(dirPath); err != nil {
 			return fmt.Errorf("erro ao criar diretório %s: %w", dir, err)
 		}
 	}
@@ -120,6 +125,11 @@ func (g *ProjectGenerator) Generate(projectPath, projectName string) error {
 		"Makefile":       "Makefile.tmpl",
 		"framework.yaml": "framework.yaml.tmpl",
 
+		//Docs
+		"docs/docs.go":      "docs_docs.go.tmpl",
+		"docs/swagger.json": "docs_swagger.json.tmpl",
+		"docs/swagger.yaml": "docs_swagger.yaml.tmpl",
+
 		// Internal/Bootstrap
 		"internal/bootstrap/bootstrap_registry.go": "bootstrap_registry.go.tmpl",
 		"internal/bootstrap/mock.go":               "mock.go.tmpl",
@@ -128,21 +138,45 @@ func (g *ProjectGenerator) Generate(projectPath, projectName string) error {
 		"pkg/config/config.go": "config.go.tmpl",
 
 		// Pkg/Container
-		"pkg/container/container.go": "container.go.tmpl",
+		"pkg/container/container.go": "pkg_container_container.go.tmpl",
+		"pkg/container/registry.go":  "pkg_container_registry.go.tmpl",
 
 		// Pkg/Events
-		"pkg/events/eventbus.go": "eventbus.go.tmpl",
+		"pkg/events/eventbus.go": "pkg_events_eventbus.go.tmpl",
+		"pkg/events/handlers.go": "pkg_events_handlers.go.tmpl",
+		"pkg/events/typed.go":    "pkg_events_typed.go.tmpl",
+		"pkg/events/types.go":    "pkg_events_types.go.tmpl",
 
 		// Pkg/Framework
-		"pkg/framework/framework.go": "framework.go.tmpl",
-		"pkg/framework/config.go":    "framework_config.go.tmpl",
+		"pkg/framework/framework.go":                 "pkg_framework_framework.go.tmpl",
+		"pkg/framework/config.go":                    "pkg_framework_config.go.tmpl",
+		"pkg/framework/providers/grpc/grpc.go":       "pkg_framework_providers_grpc_grpc.go.tmpl",
+		"pkg/framework/interfaces/module.go":         "pkg_framework_interfaces_module.go.tmpl",
+		"pkg/framework/interfaces/provider.go":       "pkg_framework_interfaces_provider.go.tmpl",
+		"pkg/framework/providers/provider.go":        "pkg_framework_providers_provider.go.tmpl",
+		"pkg/framework/providers/cache/redis.go":     "pkg_framework_providers_cache_redis.go.tmpl",
+		"pkg/framework/providers/maps/maps.go":       "pkg_framework_providers_maps_maps.go.tmpl",
+		"pkg/framework/providers/payment/payment.go": "pkg_framework_providers_payment_payment.go.tmpl",
 
 		// Pkg/Contracts
-		"pkg/contracts/interfaces.go": "interfaces.go.tmpl",
+		"pkg/contracts/interfaces.go":      "pkg_contracts_interfaces.go.tmpl",
+		"pkg/contracts/infrastructure.go":  "pkg_contracts_infrastructure.go.tmpl",
+		"pkg/contracts/interfaces_user.go": "pkg_contracts_interfaces_user.go.tmpl",
 
 		// Pkg/Adapters/Database/MySQL
-		"pkg/adapters/database/mysql/connection.go": "mysql_connection.go.tmpl",
+		"pkg/adapters/database/mysql/connection.go": "adapters_database_mysql_connection.go.tmpl",
+		// "pkg/adapters/database/mysql/migrations.go": "adapters_database_mysql_migrations.go.tmpl",
 		"pkg/adapters/database/mysql/migrations.go": "mysql_migrations.go.tmpl",
+
+		// Pkg/Adapters/Logger
+		"pkg/adapters/logger/logger.go": "adapters_logger_logger.go.tmpl",
+
+		// Pkg/Adapters/HTTP/Middleware
+		"pkg/adapters/http/middleware/middleware.go":    "adapters_http_middleware_middleware.go.tmpl",
+		"pkg/adapters/http/middleware/error_handler.go": "adapters_http_middleware_error_handler.go.tmpl",
+
+		// Pkg/Errors
+		"pkg/errors/errors.go": "pkg_errors_errors.go.tmpl",
 
 		// Proto files
 		"proto/user.proto":    "user.proto.tmpl",
@@ -156,10 +190,25 @@ func (g *ProjectGenerator) Generate(projectPath, projectName string) error {
 		"internal/modules/user/repository/user_model.go":                         "modules_user_repository_user_model.go.tmpl",
 		"internal/modules/user/ports/ports.go":                                   "modules_user_ports_ports.go.tmpl",
 		"internal/modules/user/application/services/user_application_service.go": "modules_user_application_services_user_application_service.go.tmpl",
+		"internal/modules/user/application/commands/create_user.go":              "modules_user_application_commands_create_user.go.tmpl",
+		"internal/modules/user/application/commands/update_user.go":              "modules_user_application_commands_update_user.go.tmpl",
+		"internal/modules/user/application/commands/delete_user.go":              "modules_user_application_commands_delete_user.go.tmpl",
+		"internal/modules/user/application/commands/validate_credentials.go":     "modules_user_application_commands_validate_credentials.go.tmpl",
+		"internal/modules/user/application/queries/get_user.go":                  "modules_user_application_queries_get_user.go.tmpl",
+		"internal/modules/user/application/queries/list_users.go":                "modules_user_application_queries_list_users.go.tmpl",
+		"internal/modules/user/application/queries/get_user_by_email.go":         "modules_user_application_queries_get_user_by_email.go.tmpl",
+		"internal/modules/user/errors.go":                                        "modules_user_errors.go.tmpl",
+		"internal/modules/user/dto/requests.go":                                  "modules_user_dto_requests.go.tmpl",
+		"internal/modules/user/dto/responses.go":                                 "modules_user_dto_responses.go.tmpl",
+		"internal/modules/user/dto/mapper.go":                                    "modules_user_dto_mapper.go.tmpl",
+		"internal/modules/user/adapters/http/user_http_handler.go":               "modules_user_adapters_http_user_http_handler.go.tmpl",
+		"internal/modules/user/adapters/grpc/user_grpc_handler.go":               "modules_user_adapters_grpc_user_grpc_handler.go.tmpl",
+		"internal/modules/user/adapters/email_service.go":                        "modules_user_adapters_email_service.go.tmpl",
+		"internal/modules/user/adapters/password_hasher.go":                      "modules_user_adapters_password_hasher.go.tmpl",
+		"internal/modules/user/adapters/logger.go":                               "modules_user_adapters_logger.go.tmpl",
+	}
 
-		// TODO: Adicionar mais templates dos módulos conforme necessário
-		// Este é um exemplo básico com os templates essenciais criados
-	} // Criar arquivos
+	// Criar arquivos
 	for filePath, content := range files {
 
 		fullPath := filepath.Join(projectPath, filePath)
@@ -177,12 +226,14 @@ func generateProjectFile(filePath, templateName string, project Project) error {
 
 	fmt.Println("Criando o arquivo:", filePath)
 
-	tmpl, err := template.ParseFiles(filepath.Join("internal", "generators", "templates", templateName))
-	if err != nil {
+	var tmpl = template.Must(template.ParseFS(templatesFS, "templates/*.tmpl"))
 
-		fmt.Println("Erro 1")
-		return err
-	}
+	// tmpl, err := template.ParseFiles(filepath.Join("internal", "generators", "templates", templateName))
+	// if err != nil {
+
+	// 	fmt.Println("Erro 1")
+	// 	return err
+	// }
 
 	file, err := os.Create(filePath)
 	if err != nil {
@@ -191,5 +242,5 @@ func generateProjectFile(filePath, templateName string, project Project) error {
 	}
 	defer file.Close()
 
-	return tmpl.Execute(file, project)
+	return tmpl.ExecuteTemplate(file, templateName, project)
 }
